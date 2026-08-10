@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# 英語版ソースファイル
+README_EN.md
+
+# Directory placeholders
+.folder
+
+# Snowflake Cortex Code (IDE設定・会話履歴)
+.snowflake/
+logs/
+
+# 個人情報（参加者登録データは絶対にコミットしない）
+*registration*.csv
+*registration*.xlsx
+snowflake_world_tour_*.csv
+participants*.csv
+attendees*.csv
+*_export_*.csv
