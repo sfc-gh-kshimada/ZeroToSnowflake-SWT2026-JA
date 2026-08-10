@@ -594,6 +594,9 @@ CREATE OR REPLACE API INTEGRATION git_api_integration
     ENABLED = TRUE;
 
 -- Git リポジトリの登録と最新 main ブランチの取得
+-- 注意: 下記 ORIGIN のリポジトリは Public である必要があります。
+--       Private のままだと次の FETCH が認証エラーで失敗し、
+--       raw_truck_reviews のロード以降がすべて実行できません。
 CREATE OR REPLACE GIT REPOSITORY tb_101.public.ztsja_repo
     API_INTEGRATION = git_api_integration
     ORIGIN = 'https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA';

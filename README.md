@@ -22,9 +22,24 @@ Zero to Snowflake クイックスタートへようこそ！
 ### 前提条件
 
  - Snowflake のブラウザベースの Web Interface である Snowsight へアクセスできる [ブラウザ](https://docs.snowflake.com/ja/user-guide/setup?_fsi=6tNBra0z&_fsi=6tNBra0z#browser-requirements)
- - Enterprise または Business Critical の Snowflake アカウント
- - Snowflake アカウントをお持ちでない場合は、[30日間無料トライアルアカウントにサインアップ](https://signup.snowflake.com/)してください。サインアップ時は Enterprise エディションを選択してください。[Snowflake クラウド/リージョン](https://docs.snowflake.com/ja/user-guide/intro-regions?_fsi=6tNBra0z&_fsi=6tNBra0z)はいずれでも構いません。
- - 登録後、アクティベーションリンクと Snowflake アカウント URL が記載されたメールが届きます。
+ - Wi-Fi に接続できる PC（会場では PC の貸し出しはありません）
+ - 本ハンズオン専用のトライアルアカウント
+
+本ハンズオンでは、**SWT 専用のサインアップ URL** から作成したトライアルアカウントを使用します。
+以下のパラメータで作成してください。パラメータが異なると一部の手順が実行できません。
+
+| 項目 | 指定値 |
+| --- | --- |
+| サインアップ URL | `<SWT専用サインアップURL（当日までに差し替え）>` |
+| Snowflake Edition | **Enterprise** |
+| クラウドプロバイダー | **AWS** |
+| リージョン | **US West (Oregon)**（選択できない場合は **Asia Pacific (Tokyo)**） |
+
+> **Edition について:** 自動分類・マスキングポリシー・行アクセスポリシーを扱う「Horizon によるガバナンス」の章は Enterprise Edition 以上が必要です。Standard で作成すると当該章が実行できません。
+
+> **サインアップ URL について:** SWT 期間のみ有効な専用 URL です。外部への共有はご遠慮ください。
+
+アカウント作成後、届いたメールのアクティベーションリンクからユーザー名とパスワードを設定してください。
 
 ### 学習内容
 
@@ -51,6 +66,8 @@ Zero to Snowflake クイックスタートへようこそ！
 
 最初の SQL ファイルの作成方法、必要なセットアップコードの追加方法、および実行方法を説明します。
 
+> **実行順序に注意:** 必ず **ステップ 2 の `setup.sql` を先に実行**してから、ステップ 3 の Git ワークスペースを作成してください。`setup.sql` が Git 連携に必要な `GIT_API_INTEGRATION` を作成するため、順序を逆にするとワークスペース作成に失敗します。
+
 ### **ステップ 1 - セットアップ SQL ファイルの作成**
 
 まず、セットアップスクリプトを置く場所が必要です。
@@ -68,6 +85,27 @@ SQL ファイルができたので、セットアップ SQL を追加して実�
 3. **スクリプトの実行:** SQL ファイル内のすべてのコマンドを順次実行するには、エディタ左上にある **「Run All」** ボタンをクリックします。これにより、以降のビネットに必要なロール、スキーマ、ウェアハウスの作成などのセットアップ処理がすべて実行されます。
 
 ![./assets/create_a_worksheet.gif](./assets/create_a_worksheet.gif)
+
+> **「∨」→「すべて実行 (Run All)」を使用してください。** 1 文ずつ実行すると途中で止まり、以降の章が動作しません。
+
+### **ステップ 3 - Git ワークスペースの作成**
+
+`setup.sql` の実行が完了したら、各章の SQL やデータをまとめて取得できるよう、このリポジトリを Git ワークスペースとしてリンクします。
+
+1. Workspaces 画面上部の **+ Add New** をマウスオーバーして選択します。
+2. 最下部の **Git Repository**（Git ワークスペース）を選択します。
+3. 以下のパラメータを入力します。
+
+| 項目 | 入力値 |
+| --- | --- |
+| リポジトリ URL | `https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA` |
+| ワークスペース名 | `ZeroToSnowflake-SWT2026-JA` |
+| API 統合 | `GIT_API_INTEGRATION` |
+| アクセス | **パブリックリポジトリ** を選択 |
+
+4. **作成** を選択します。リポジトリ内のファイルがワークスペースに表示されれば成功です。
+
+このワークスペースを開くとリポジトリ同梱の `AGENTS.md` が自動的に読み込まれ、CoCo が本ハンズオンのオブジェクトを壊さないよう制御されます。
 
 ### **今後の作業について**
 
