@@ -17,7 +17,7 @@ Snowflake には Snowsight に統合された AI エージェント **CoCo (Cort
 
 このハンズオン専用に、既存のデータや設定に影響を与えない隔離スキーマ `tb_101.coco_handson` を用意しています。CoCo にはこのスキーマの中だけで自由に作業してもらうので、他の Vignette の内容を壊す心配はありません。
 
-> **安全に試せる理由：** CoCo は `CREATE`・`INSERT`・`DROP` などの書き込み系 SQL を実行する前に必ず確認ダイアログを表示します（「今回のみ許可」「このチャットでは常に許可」などを選択可能）。またこのリポジトリには `AGENTS.md` というガードレールファイルが含まれており、CoCo に対して「`tb_101.coco_handson` 以外のオブジェクトは変更・削除しない」ことを指示しています。Git 連携済みのワークスペースとしてこのリポジトリを開くと（**Projects** » **Workspaces** » **+ Add New** » **Git Repository** から `https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA` を指定）、`AGENTS.md` が自動的に読み込まれます。通常のワークシートで試す場合でも、上記の確認ダイアログにより誤操作は防止されます。
+> **安全に試せる理由：** CoCo は `CREATE`・`INSERT`・`DROP` などの書き込み系 SQL を実行する前に必ず確認ダイアログを表示します（「今回のみ許可」「このチャットでは常に許可」などを選択可能）。またこのリポジトリには `AGENTS.md` というガードレールファイルが含まれており、CoCo に対して「`tb_101.coco_handson` 以外のオブジェクトは変更・削除しない」ことを指示しています。Git 連携済みのワークスペースとしてこのリポジトリを開くと（**Projects** » **Workspaces** » **+ Add New** » **Git Repository** から `https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA` を指定）、`AGENTS.md` が自動的に読み込まれます。通常のワークシートで試す場合でも、上記の確認ダイアログにより誤操作は防止されます。
 
 ## 学習内容
 - Snowsight で CoCo (Cortex Code) パネルを開き、対話形式で SQL を生成・実行する方法。

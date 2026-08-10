@@ -596,7 +596,7 @@ CREATE OR REPLACE API INTEGRATION git_api_integration
 -- Git リポジトリの登録と最新 main ブランチの取得
 CREATE OR REPLACE GIT REPOSITORY tb_101.public.ztsja_repo
     API_INTEGRATION = git_api_integration
-    ORIGIN = 'https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA';
+    ORIGIN = 'https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA';
 
 ALTER GIT REPOSITORY tb_101.public.ztsja_repo FETCH;
 

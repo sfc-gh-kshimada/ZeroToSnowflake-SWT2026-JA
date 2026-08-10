@@ -63,7 +63,7 @@ Zero to Snowflake クイックスタートへようこそ！
 
 SQL ファイルができたので、セットアップ SQL を追加して実行します。
 
-1. **SQL コードのコピー:** **[セットアップファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA/blob/main/setup.sql)** のリンクをクリックし、クリップボードにコピーします。
+1. **SQL コードのコピー:** **[セットアップファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/setup.sql)** のリンクをクリックし、クリップボードにコピーします。
 2. **SQL ファイルへの貼り付け:** Snowflake の Zero To Snowflake Setup SQL ファイルに戻り、スクリプト全体をエディタに貼り付けます。
 3. **スクリプトの実行:** SQL ファイル内のすべてのコマンドを順次実行するには、エディタ左上にある **「Run All」** ボタンをクリックします。これにより、以降のビネットに必要なロール、スキーマ、ウェアハウスの作成などのセットアップ処理がすべて実行されます。
 
@@ -107,7 +107,7 @@ SQL ファイルができたので、セットアップ SQL を追加して実�
 
 ### SQL コードを取得して SQL ファイルに貼り付けます。
 
-**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA/blob/main/scripts/vignette-1.sql)の SQL コードをコピーして、Snowflake の新しい SQL ファイルに貼り付けて進めてください。SQL ファイルの最後まで到達したら、ステップ 10 - シンプルなデータパイプラインにスキップできます。**
+**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-1.sql)の SQL コードをコピーして、Snowflake の新しい SQL ファイルに貼り付けて進めてください。SQL ファイルの最後まで到達したら、ステップ 10 - シンプルなデータパイプラインにスキップできます。**
 
 ### 仮想ウェアハウスと設定
 
@@ -467,7 +467,7 @@ Snowsight のバジェットページを確認しましょう。
 
 ### SQL を取得して SQL ファイルに貼り付けます。
 
-**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA/blob/main/scripts/vignette-2-1.sql)の SQL を新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。SQL ファイルの最後まで到達したら、ステップ 16 - Snowflake Cortex AI にスキップできます。**
+**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-2-1.sql)の SQL を新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。SQL ファイルの最後まで到達したら、ステップ 16 - Snowflake Cortex AI にスキップできます。**
 
 ### 外部ステージの取り込み
 
@@ -743,11 +743,11 @@ Snowflake には Snowsight に統合された AI エージェント **CoCo (Cort
 
 このハンズオン専用に、既存のデータや設定に影響を与えない隔離スキーマ `tb_101.coco_handson` を用意しています。CoCo にはこのスキーマの中だけで自由に作業してもらうので、他の Vignette の内容を壊す心配はありません。
 
-> **安全に試せる理由：** CoCo は `CREATE`・`INSERT`・`DROP` などの書き込み系 SQL を実行する前に必ず確認ダイアログを表示します（「今回のみ許可」「このチャットでは常に許可」などを選択可能）。またこのリポジトリには `AGENTS.md` というガードレールファイルが含まれており、CoCo に対して「`tb_101.coco_handson` 以外のオブジェクトは変更・削除しない」ことを指示しています。Git 連携済みのワークスペースとしてこのリポジトリを開くと（**Projects** » **Workspaces** » **+ Add New** » **Git Repository** から `https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA` を指定）、`AGENTS.md` が自動的に読み込まれます。通常のワークシートで試す場合でも、上記の確認ダイアログにより誤操作は防止されます。
+> **安全に試せる理由：** CoCo は `CREATE`・`INSERT`・`DROP` などの書き込み系 SQL を実行する前に必ず確認ダイアログを表示します（「今回のみ許可」「このチャットでは常に許可」などを選択可能）。またこのリポジトリには `AGENTS.md` というガードレールファイルが含まれており、CoCo に対して「`tb_101.coco_handson` 以外のオブジェクトは変更・削除しない」ことを指示しています。Git 連携済みのワークスペースとしてこのリポジトリを開くと（**Projects** » **Workspaces** » **+ Add New** » **Git Repository** から `https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA` を指定）、`AGENTS.md` が自動的に読み込まれます。通常のワークシートで試す場合でも、上記の確認ダイアログにより誤操作は防止されます。
 
 ### 手順を取得します。
 
-**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA/blob/main/scripts/vignette-2-2.md)の手順に沿って、Snowsight の CoCo (Cortex Code) パネルで進めてください。SQL ファイルは不要です。完了したら、ステップ 16 - Snowflake Cortex AI にスキップできます。**
+**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-2-2.md)の手順に沿って、Snowsight の CoCo (Cortex Code) パネルで進めてください。SQL ファイルは不要です。完了したら、ステップ 16 - Snowflake Cortex AI にスキップできます。**
 
 ## Horizon によるガバナンス
 ![./assets/governance_header.png](./assets/governance_header.png)
@@ -773,7 +773,7 @@ Snowflake には Snowsight に統合された AI エージェント **CoCo (Cort
 
 ### SQL コードを取得して SQL ファイルに貼り付けます。
 
-**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA/blob/main/scripts/vignette-3.sql)の SQL を新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。**
+**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-3.sql)の SQL を新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。**
 
 **SQL ファイルの最後まで到達したら、[ステップ 29 - Snowflake Cortex AI](/en/developers/guides/zero-to-snowflake/)にスキップできます。**
 
@@ -1236,7 +1236,7 @@ Snowflake Cortex AI に焦点を当てた Zero to Snowflake ガイドへよう�
 
 ### SQL コードを取得して SQL ファイルに貼り付けます。
 
-この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA/blob/main/scripts/vignette-4_1.ipynb)の SQL を新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。
+この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-4_1.sql)の SQL を新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。
 
 ### ステップ 1 - コンテキストの設定
 
@@ -1623,7 +1623,7 @@ COO が Q3 の収益低下の原因を理解する必要がある場合、顧客
 
 #### ステップ 1 - セマンティックモデルのアップロード
 
-Snowflake Intelligence でビジネス分析機能を有効にするには、事前構築済みのセマンティックモデルファイルを Snowflake ステージにアップロードする必要があります。**このリンクをクリックして必要な YAML ファイルを直接ダウンロードできます：** [Cortex Analyst セマンティックモデル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA/blob/main/scripts/TASTY_BYTES_BUSINESS_ANALYTICS.yaml)
+Snowflake Intelligence でビジネス分析機能を有効にするには、事前構築済みのセマンティックモデルファイルを Snowflake ステージにアップロードする必要があります。**このリンクをクリックして必要な YAML ファイルを直接ダウンロードできます：** [Cortex Analyst セマンティックモデル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/TASTY_BYTES_BUSINESS_ANALYTICS.yaml)
 
 **重要：** リンクをクリックするとブラウザでファイルが開く場合は、リンクを右クリックして **「名前を付けてリンク先を保存」** を選択し、YAML ファイルをローカルマシンにダウンロードしてください。
 
@@ -1859,7 +1859,7 @@ Tasty Bytes で経験したことは、ビジネスがデータを真に理解�
 
 ### SQL コードを取得して SQL ファイルに貼り付けます。
 
-**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA/blob/main/scripts/vignette-5.ipynb)の SQL コードを新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。**
+**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-5.ipynb)の SQL コードを新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。**
 
 ### Snowflake マーケットプレイスからのデータ取得
 
@@ -2130,7 +2130,7 @@ Streamlit in Snowflake は、開発者が Snowflake 内で直接アプリケー�
 アプリが最初に読み込まれると、右ペインにサンプルアプリが表示され、左側のエディタペインにアプリのコードが表示されます。
 
 4. すべてのコードを選択して削除します。
-5. **次に、この[コード](https://github.com/sfc-gh-kshimada/ZeroToSnowflake_JA/blob/main/streamlit_apps/jp_sales_dashboard.py)を空のエディタウィンドウにコピー＆ペーストし、右上の「Run」をクリックします。**
+5. **次に、この[コード](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/streamlit_apps/jp_sales_dashboard.py)を空のエディタウィンドウにコピー＆ペーストし、右上の「Run」をクリックします。**
 
 ![./assets/vignette-5/create_streamlit_app.gif](./assets/vignette-5/create_streamlit_app.gif)
 
