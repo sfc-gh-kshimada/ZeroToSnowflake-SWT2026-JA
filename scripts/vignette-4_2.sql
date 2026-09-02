@@ -1,14 +1,27 @@
 /***************************************************************************************************
 Asset:        Zero to Snowflake - Cortex による BI エージェントの構築
-Version:      v1
+Version:      v2
 Copyright(c): 2025 Snowflake Inc. All rights reserved.
 
-目次:
-  1. セッションの初期設定
-  2. Cortex Search Service の作成
-  3. Cortex Search テスト（基本検索 / フィルター付き検索）
-  4. Cortex Analyst — Semantic View の作成
-  5. Cortex Agent の作成
+進め方:
+  本スクリプトは「スライドで座学 → SQL で作成 → UI でテスト」を 3 回繰り返す構成です。
+  各パートの冒頭にある ★スライド★ で講師の解説を聞いてから SQL を実行してください。
+
+  PART 1  Cortex Search   … 非構造化データ（レビュー）の意味検索
+          1-1. ★スライド★ Cortex Search の座学
+          1-2. Cortex Search Service を作成 (SQL)
+          1-3. SQL でテスト
+          1-4. UI (Playground) でテスト
+
+  PART 2  Semantic View   … 構造化データ（売上）への意味付け
+          2-1. ★スライド★ Semantic View / Cortex Analyst の座学
+          2-2. Semantic View を作成 (SQL)
+          2-3. UI (Cortex Analyst) でテスト
+
+  PART 3  Cortex Agent    … 2 つのツールを束ねた BI エージェント
+          3-1. ★スライド★ Cortex Agents / Snowflake CoWork の座学
+          3-2. Cortex Agent を作成 (SQL)
+          3-3. UI (Snowflake CoWork) でテスト
 
 前提条件:
   - setup.sql 実行済み
@@ -19,7 +32,7 @@ Copyright(c): 2025 Snowflake Inc. All rights reserved.
 ***************************************************************************************************/
 
 -- ============================================================
--- 1. セッションの初期設定
+-- 0. セッションの初期設定
 -- ============================================================
 
 USE ROLE TB_DATA_ENGINEER;
@@ -28,19 +41,33 @@ USE WAREHOUSE TB_DE_WH;
 
 
 -- ============================================================
--- 2. Cortex Search — レビュー意味検索サービスの構築
+-- PART 1: Cortex Search — レビューの意味検索
 -- ============================================================
--- Cortex Search は、テキストをベクトル化してインデックスし、
--- 意味的に近いテキストを検索できるサービスです。
---
--- パラメーター説明:
---   ON          : ベクトル化・インデックス対象カラム
---   ATTRIBUTES  : 検索時に filter で絞り込みに使えるカラム
---   WAREHOUSE   : インデックス構築・更新に使うウェアハウス
---   TARGET_LAG  : ベーステーブルの更新がインデックスに反映されるまでの最大遅延
---   EMBEDDING_MODEL : テキストをベクトル化する埋め込みモデル
+/*  1-1. ★スライド★ Cortex Search の座学
+    ------------------------------------------------------------------
+    ここで講師のスライド解説を聞いてください。
 
--- Cortex Search Service の作成
+    要点:
+      - キーワード検索（全文検索）とベクトル検索を組み合わせたハイブリッド検索
+      - 「言葉が一致しなくても意味が近い」レビューを取り出せる
+      - インデックス構築・更新・スケーリングはフルマネージド
+*/
+
+/*  1-2. Cortex Search Service の作成
+    ------------------------------------------------------------------
+    パラメーター説明:
+      ON              : ベクトル化・インデックス対象カラム
+      ATTRIBUTES      : 検索時に filter で絞り込みに使えるカラム
+      WAREHOUSE       : インデックス構築・更新に使うウェアハウス
+      TARGET_LAG      : ベーステーブルの更新がインデックスに反映されるまでの最大遅延
+      EMBEDDING_MODEL : テキストをベクトル化する埋め込みモデル
+                        arctic-embed-l-v2.0 は多言語対応（日本語を含む）
+
+    ★ 実行後、インデックス構築に数分かかります。
+      完了前に検索するとヒット 0 件になるため、1-3 に進む前に少し待ってください。
+      進捗は次のコマンドで確認できます:
+        SHOW CORTEX SEARCH SERVICES LIKE 'TASTY_BYTES_REVIEW_SEARCH' IN SCHEMA TB_101.HARMONIZED;
+*/
 CREATE OR REPLACE CORTEX SEARCH SERVICE TB_101.HARMONIZED.TASTY_BYTES_REVIEW_SEARCH
   ON REVIEW
   ATTRIBUTES REVIEW_ID, ORDER_ID, TRUCK_ID, LANGUAGE, PRIMARY_CITY, CUSTOMER_ID, DATE, TRUCK_BRAND_NAME
@@ -62,9 +89,12 @@ CREATE OR REPLACE CORTEX SEARCH SERVICE TB_101.HARMONIZED.TASTY_BYTES_REVIEW_SEA
     WHERE REVIEW IS NOT NULL
   );
 
+-- サービスの状態を確認する（インデックス構築の完了を待つ）
+SHOW CORTEX SEARCH SERVICES LIKE 'TASTY_BYTES_REVIEW_SEARCH' IN SCHEMA TB_101.HARMONIZED;
+
 
 -- ============================================================
--- 3. Cortex Search テスト
+-- 1-3. SQL でテスト
 -- ============================================================
 -- SNOWFLAKE.CORTEX.SEARCH_PREVIEW で検索し、
 -- TABLE(FLATTEN(...))['results'] でテーブル形式に展開します。
@@ -111,22 +141,77 @@ FROM TABLE(FLATTEN(
 )) r;
 
 
--- ============================================================
--- 4. Cortex Analyst — Semantic View の構築
--- ============================================================
--- Cortex Analyst は自然言語の質問を SQL に自動変換して実行するサービスです。
--- Semantic View はデータの「意味」を定義するオブジェクトで、
--- テーブル・リレーション・メトリクス・AI 生成ルールを一体で管理します。
---
--- Semantic View の構成要素:
---   TABLES           : 分析対象テーブルとエイリアス定義
---   RELATIONSHIPS    : テーブル間の結合条件
---   FACTS            : 集計対象となる数値カラム
---   DIMENSIONS       : フィルタ・グループ化に使う属性カラム
---   METRICS          : よく使う集計の定義（SUM / AVG / COUNT など）
---   AI_SQL_GENERATION: SQL 生成時の挙動を制御するカスタム指示
+/*  1-4. UI (Playground) でテスト
+    ------------------------------------------------------------------
+    SQL で動作を確認したら、次は UI で対話的に検索してみましょう。
 
--- Semantic View の作成
+    【操作手順】
+      1. Snowsight の左側メニューから「AI & ML」→「Cortex Search」を開く
+      2. 一覧から TASTY_BYTES_REVIEW_SEARCH を選択
+      3. ステータスが「Active」になっていることを確認
+      4. 画面右上の「Playground」をクリック
+      5. 検索バーに以下のプロンプトを入力して結果を比較する
+
+    【プロンプト例 — 英語】
+      レビュー本文は英語が中心のため、まず英語で試すとヒットしやすい。
+
+      (a) Customers getting sick
+          → 「体調を崩した」と明言していないレビューも拾える。
+            食品衛生リスクの予兆を検知する使い方。
+
+      (b) Angry customers
+          → 「怒っている」という単語が無くても不満を表明したレビューが並ぶ。
+            解約予兆の検知に使える。
+
+      (c) The food was cold when it arrived
+          → 提供温度に関する具体的な不満を抽出する。
+
+      (d) Long waiting time at the truck
+          → 待ち時間・オペレーション課題に関するレビューを抽出する。
+
+    【プロンプト例 — 日本語】
+      arctic-embed-l-v2.0 は多言語対応のため、日本語クエリでも英語レビューが
+      ヒットする（クロスリンガル検索）。日本語で試して挙動の違いを確認する。
+
+      (e) 麺が伸びていた
+      (f) 接客態度が悪い
+      (g) 値段が高すぎる
+
+    【観察のポイント】
+      - キーワード完全一致ではなく「意味が近い」順に並ぶことを確認する
+      - 検索結果の右側に表示されるスコアと、元のレビュー本文を見比べる
+      - Filters で PRIMARY_CITY や TRUCK_BRAND_NAME を指定し、
+        1-3 の SQL で書いた filter と同じ絞り込みが UI でもできることを確認する
+*/
+
+
+-- ============================================================
+-- PART 2: Semantic View — 構造化データへの意味付け
+-- ============================================================
+/*  2-1. ★スライド★ Semantic View / Cortex Analyst の座学
+    ------------------------------------------------------------------
+    ここで講師のスライド解説を聞いてください。
+
+    要点:
+      - Cortex Analyst は自然言語の質問を SQL に変換して実行するサービス
+      - Semantic View は「データの意味」を定義するスキーマオブジェクト
+      - カラム名や JOIN の複雑さを隠し、ビジネス用語で問い合わせできるようにする
+      - 定義を一元管理するため、BI ツールと AI で同じ指標定義を共有できる
+*/
+
+/*  2-2. Semantic View の作成
+    ------------------------------------------------------------------
+    Semantic View の構成要素:
+      TABLES           : 分析対象テーブルとエイリアス定義
+      RELATIONSHIPS    : テーブル間の結合条件
+      FACTS            : 集計対象となる数値カラム
+      DIMENSIONS       : フィルタ・グループ化に使う属性カラム
+      METRICS          : よく使う集計の定義（SUM / AVG / COUNT など）
+      AI_SQL_GENERATION: SQL 生成時の挙動を制御するカスタム指示
+
+    ★ この CREATE 文は 1 つで約 270 行あります。
+      途中まで選択して実行すると構文エラーになるため、文全体を実行してください。
+*/
 CREATE OR REPLACE SEMANTIC VIEW TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS
 
     TABLES (
@@ -397,18 +482,97 @@ $$
 
     COPY GRANTS;
 
+-- 作成された Semantic View の構成を確認する
+DESCRIBE SEMANTIC VIEW TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS;
+
+-- SQL から直接クエリすることもできる（UI を使わない場合の確認用）
+SELECT * FROM SEMANTIC_VIEW(
+    TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS
+    DIMENSIONS ORDERS.TRUCK_BRAND_NAME
+    METRICS ORDERS.TOTAL_REVENUE, ORDERS.TOTAL_ORDERS
+) ORDER BY TOTAL_REVENUE DESC LIMIT 10;
+
+
+/*  2-3. UI (Cortex Analyst) でテスト
+    ------------------------------------------------------------------
+    作成した Semantic View に対して、自然言語で質問してみましょう。
+
+    【操作手順】
+      1. Snowsight の左側メニューから「AI & ML」→「Cortex Analyst」を開く
+      2. セマンティックビューの一覧から
+         TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS を選択
+      3. ロールを TB_DATA_ENGINEER、ウェアハウスを TB_CORTEX_WH に設定
+      4. チャット欄に以下のプロンプトを入力する
+
+    【プロンプト例 — 基本（AI_VERIFIED_QUERIES に登録済み）】
+      検証済みクエリとして登録してあるため、安定して正しい SQL が返る。
+      オンボーディング質問として UI に候補表示される場合もある。
+
+      (a) 売上上位のトラックブランドは？
+      (b) 年別の売上推移は？
+      (c) 注文件数が多い都市トップ10は？
+      (d) ロイヤルティ会員の居住国別の平均 LTV は？
+
+    【プロンプト例 — 応用】
+      検証済みクエリに無い質問でも、DIMENSIONS / METRICS の定義とシノニムから
+      正しい SQL が生成されることを確認する。
+
+      (e) メニュータイプ別の総売上を教えて
+      (f) フランチャイズと直営で客単価に差はある？
+      (g) 東京で一番売れているメニューは何？
+      (h) 2022年の月別売上トレンドを教えて
+      (i) 顧客1人あたりの売上が高い都市トップ5は？
+
+    【プロンプト例 — ガードレールの確認】
+      AI_QUESTION_CATEGORIZATION に書いたルールが効くかを確認する。
+      「答えられないことを正しく答える」のも重要な品質。
+
+      (j) 2024年の売上を教えて
+          → データは 2019年1月〜2022年11月 のみ。
+            空の結果ではなく「データが含まれていません」と明示的に返るはず。
+
+      (k) 顧客の氏名と電話番号を一覧で出して
+          → 個人情報に関する質問として拒否されるはず。
+
+      (l) 評判の良いトラックはどこ？
+          → レビュー検索が必要な質問として「Cortex Search を使ってください」と
+            案内されるはず。構造化データだけでは答えられないことを示す。
+
+    【観察のポイント】
+      - 回答と一緒に生成された SQL を必ず開いて確認する
+      - 注文件数を聞いたとき COUNT(DISTINCT ORDER_ID) が使われているか
+        （このテーブルは注文明細レベルなので単純な COUNT では過大になる）
+      - 曖昧な質問にどう解釈が補われたかを確認する
+*/
+
 
 -- ============================================================
--- 5. Cortex Agent — BI エージェントの構築
+-- PART 3: Cortex Agent — BI エージェントの構築
 -- ============================================================
--- Cortex Agent は複数のツール（Cortex Search・Cortex Analyst など）を
--- 組み合わせて自律的に動作する AI エージェントです。
---
--- ツール構成:
---   SALES_ANALYST  (cortex_analyst_text_to_sql) : 売上・注文件数などの数値分析
---   REVIEW_SEARCH  (cortex_search)              : レビュー本文・口コミの意味検索
+/*  3-1. ★スライド★ Cortex Agents / Snowflake CoWork の座学
+    ------------------------------------------------------------------
+    ここで講師のスライド解説を聞いてください。
 
--- Cortex Agent の作成（Cortex Search + Cortex Analyst を束ねた BI エージェント）
+    要点:
+      - Cortex Agent は複数のツールを束ね、質問に応じて使い分けるオーケストレーション層
+      - PART 1 の Cortex Search（非構造化）と PART 2 の Semantic View（構造化）を
+        1 つのエージェントから呼び出せる
+      - 「評判の良いブランドの売上は？」のような複合質問は、
+        単一ツールでは答えられずエージェントが必要になる
+      - Snowflake CoWork（旧 Snowflake Intelligence）が対話 UI を提供する
+*/
+
+/*  3-2. Cortex Agent の作成
+    ------------------------------------------------------------------
+    ツール構成:
+      SALES_ANALYST  (cortex_analyst_text_to_sql) : 売上・注文件数などの数値分析
+      REVIEW_SEARCH  (cortex_search)              : レビュー本文・口コミの意味検索
+
+    instructions の役割:
+      response      : 回答の口調・書式の指示
+      orchestration : どの質問でどのツールを使うかの判断基準
+      sample_questions : UI に候補として表示される質問例
+*/
 CREATE OR REPLACE AGENT TB_101.SEMANTIC_LAYER.TASTY_BYTES_BI_AGENT
     COMMENT = 'Tasty Bytes フードトラックビジネスのレビュー検索と売上分析を横断的に行う BI エージェント'
 FROM SPECIFICATION $$
@@ -456,3 +620,71 @@ FROM SPECIFICATION $$
   }
 }
 $$;
+
+-- 作成されたエージェントを確認する
+SHOW AGENTS IN SCHEMA TB_101.SEMANTIC_LAYER;
+
+
+/*  3-3. UI (Snowflake CoWork) でテスト
+    ------------------------------------------------------------------
+    作成したエージェントと対話し、2 つのツールが使い分けられることを確認します。
+
+    【操作手順】
+      1. Snowsight を開き「AI & ML Studio」から「Snowflake CoWork」を選択
+         （環境によっては「Snowflake Intelligence」と表示されます）
+      2. エージェント選択で TASTY_BYTES_BI_AGENT を選ぶ
+      3. チャット欄に以下のプロンプトを入力する
+
+    【プロンプト例 — 単一ツール（数値分析 / SALES_ANALYST）】
+      (a) 売上上位のトラックブランドを教えてください。
+      (b) 都市別の注文件数と売上を比較してください。
+      (c) 月別の売上トレンドを教えてください。
+      (d) フランチャイズと直営で売上に差はありますか？
+
+    【プロンプト例 — 単一ツール（レビュー検索 / REVIEW_SEARCH）】
+      (e) 食べ物が美味しいと評判のトラックはどこですか？
+      (f) サービスが良いというレビューが多いブランドはどこですか？
+      (g) 待ち時間について不満を述べているレビューを探してください。
+
+    【プロンプト例 — 複合質問（2 ツール連携）★ここが本題★】
+      非構造化データで対象を特定し、構造化データで定量化する。
+      単一ツールでは答えられない質問であることを体感する。
+
+      (h) 食べ物が美味しいと評判のトラックの売上はいくらですか？
+          → REVIEW_SEARCH で評判の良いブランドを特定
+            → SALES_ANALYST でそのブランドの売上を集計
+
+      (i) 売上ワースト5都市と、その都市の主な不満点トップ3を表で出してください。
+          → SALES_ANALYST で下位都市を特定
+            → REVIEW_SEARCH で各都市のレビューから不満点を抽出
+
+      (j) 都市別・ブランド別の売上トップ5を出して、
+          上位ブランドの顧客レビューの傾向も教えてください。
+
+    【観察のポイント】
+      - 回答の生成過程（どのツールを何回呼んだか）を UI 上で確認する
+      - 複合質問では 2 つのツールが順に呼ばれていることを確かめる
+      - 数値の根拠として生成された SQL を開いて確認する
+      - PART 1・PART 2 で作った 2 つのオブジェクトが、
+        エージェントの「道具」として機能していることを確認する
+
+    【うまく動かない場合】
+      - エージェントが CoWork に表示されない場合は、
+        Snowflake CoWork（Intelligence）オブジェクトへの追加権限が必要です。
+        README の「Snowflake Intelligence」セクションを参照してください。
+      - REVIEW_SEARCH がヒットしない場合は、PART 1 のインデックス構築が
+        完了しているか SHOW CORTEX SEARCH SERVICES で確認してください。
+*/
+
+
+/*==================================================================================================
+ (オプション) クリーンアップ
+   ハンズオン後に作成オブジェクトを削除する場合は以下のブロックを実行してください。
+==================================================================================================*/
+/*
+USE ROLE TB_DATA_ENGINEER;
+
+DROP AGENT IF EXISTS TB_101.SEMANTIC_LAYER.TASTY_BYTES_BI_AGENT;
+DROP SEMANTIC VIEW IF EXISTS TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS;
+DROP CORTEX SEARCH SERVICE IF EXISTS TB_101.HARMONIZED.TASTY_BYTES_REVIEW_SEARCH;
+*/

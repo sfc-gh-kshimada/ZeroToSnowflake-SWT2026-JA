@@ -1897,7 +1897,9 @@ Tasty Bytes で経験したことは、ビジネスがデータを真に理解�
 
 ### SQL コードを取得して SQL ファイルに貼り付けます。
 
-**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-5.ipynb)の SQL コードを新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。**
+> **★ このセクションは【オプション】です。** SWT ハンズオン（4 時間）の本編では時間の都合により扱いません。ご興味があればハンズオン後にご自身のペースでお試しください。
+
+**この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-5-OPTIONAL.sql)の SQL コードを新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。**
 
 ### Snowflake マーケットプレイスからのデータ取得
 
