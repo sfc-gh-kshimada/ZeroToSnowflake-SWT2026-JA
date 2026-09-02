@@ -8,7 +8,10 @@ Copyright(c): 2025 Snowflake Inc. All rights reserved.
   2. 自動分類 & PII タグ — 分類プロファイルで PII カラムを自動検出・タグ付け
   3. Dynamic Masking      — pii タグに紐付くマスキングポリシーで列値を難読化
   4. Row Access Policy    — ロールごとに参照可能な国を制限
-  5. Data Metric Function — 組み込み / カスタム DMF でデータ品質をチェック
+
+以下は時間に余裕がある場合のオプションセクションです:
+  5. (オプション) Data Metric Function — 組み込み / カスタム DMF でデータ品質をチェック
+  6. (オプション) Trust Center         — アカウント全体のセキュリティ状態を監視 (UI 操作)
 
 前提条件:
   - setup.sql 実行済み（tb_101 DB, raw_customer/governance スキーマ, tb_admin/tb_data_engineer 等のロール, tb_dev_wh ウェアハウス）
@@ -63,7 +66,7 @@ GRANT EXECUTE AUTO CLASSIFICATION ON SCHEMA raw_customer TO ROLE tb_data_steward
 GRANT DATABASE ROLE SNOWFLAKE.CLASSIFICATION_ADMIN TO ROLE tb_data_steward;
 GRANT CREATE SNOWFLAKE.DATA_PRIVACY.CLASSIFICATION_PROFILE ON SCHEMA governance TO ROLE tb_data_steward;
 
--- データ品質モニタリングの権限（Section 5 で使用）
+-- データ品質モニタリングの権限（Section 5 オプション で使用）
 -- 組み込み DMF の手動呼び出しには対象テーブルへの SELECT が必要
 GRANT SELECT ON ALL TABLES IN SCHEMA raw_pos TO ROLE tb_data_steward;
 -- 不正レコードを挿入して DMF の検知を確認するために INSERT が必要
@@ -232,9 +235,14 @@ ORDER BY cnt DESC;
 
 
 /*==================================================================================================
- 5. データ品質モニタリング (Data Metric Functions)
+ 5. (オプション) データ品質モニタリング (Data Metric Functions)
    ガバナンスは「守る」だけでなく「データを信頼できる状態に保つ」ことも含む。
    Snowflake の Data Metric Function (DMF) で、テーブルの品質チェックを SQL で表現する。
+
+   ★ このセクションはオプションです。時間がない場合はスキップしてください。
+
+   公式ドキュメント:
+   https://docs.snowflake.com/ja/user-guide/data-quality-intro
 ==================================================================================================*/
 
 USE ROLE tb_data_steward;
@@ -318,6 +326,68 @@ SELECT governance.invalid_order_total_count(
 
     参考: https://docs.snowflake.com/ja/user-guide/data-quality-intro
 */
+
+
+/*==================================================================================================
+ 6. (オプション) Trust Center によるセキュリティ監視
+   ここまではデータそのものを保護してきた。最後にアカウント全体のセキュリティ状態を確認する。
+
+   Trust Center は Snowflake アカウントのセキュリティリスクを評価・監視する統合コンソール。
+   スキャナーが MFA 未設定・過剰権限ロール・非アクティブユーザーなどを自動検出し、
+   推奨される修復手順を提示する。
+
+   ★ このセクションは Snowsight の UI 操作が主体のため、SQL は権限付与のみ。
+     操作手順のスクリーンショットは README を参照してください。
+
+   README (UI 手順・スクリーンショット):
+   https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/README.md#トラストセンター
+
+   公式ドキュメント:
+   https://docs.snowflake.com/ja/user-guide/trust-center/overview
+==================================================================================================*/
+
+/*  6-1. Trust Center を操作するための権限付与
+    ------------------------------------------------------------------
+    TRUST_CENTER_ADMIN アプリケーションロールを持つロールだけが
+    スキャナーパッケージの有効化と Findings の参照を行える。
+*/
+USE ROLE accountadmin;
+GRANT APPLICATION ROLE SNOWFLAKE.TRUST_CENTER_ADMIN TO ROLE tb_admin;
+
+USE ROLE tb_admin;
+
+/*  6-2. Snowsight で Trust Center を開く（UI 操作）
+    ------------------------------------------------------------------
+    1. 左側ナビゲーションバーの「Monitoring」をクリック
+    2. 「Trust Center」をクリック
+*/
+
+/*  6-3. スキャナーパッケージの有効化（UI 操作）
+    ------------------------------------------------------------------
+    デフォルトではほとんどのスキャナーパッケージが無効になっている。
+    アカウントのセキュリティ態勢を確認するために有効化する。
+
+    1. 「Scanner Packages」タブをクリック
+    2. 「CIS Benchmarks」をクリック
+    3. 「Enable Package」ボタンをクリック
+    4. モーダルで Frequency を「Monthly」に設定し「Continue」をクリック
+    5. 「Threat Intelligence」パッケージでも同じ手順を繰り返す
+*/
+
+/*  6-4. 検出結果の確認（UI 操作）
+    ------------------------------------------------------------------
+    スキャナーの実行完了までしばらく待ってから「Findings」タブを開く。
+
+    - 重大度別の違反サマリーがダッシュボードに表示される
+    - 下部のリストに各違反・重大度・検出したスキャナーが一覧表示される
+    - 任意の違反をクリックすると、概要と推奨される修復手順が右ペインに開く
+
+    ポイント: Violations（推奨設定から外れた持続的な状態）と
+              Detections（不審なログインなど単発のイベント）の2種類がある。
+*/
+
+-- 演習を続ける場合はガバナンス用ロールに戻す
+USE ROLE tb_data_steward;
 
 
 /*==================================================================================================
