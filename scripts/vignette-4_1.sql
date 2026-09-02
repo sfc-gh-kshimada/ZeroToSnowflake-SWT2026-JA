@@ -66,7 +66,7 @@ WITH raw_analysis AS (
         date,
         review,
         AI_COMPLETE(
-            'claude-sonnet-4-6',
+            'claude-sonnet-5',
             'Analyze the following ramen restaurant review and respond in JSON only.' || CHR(10) || CHR(10) || review,
             response_format => {
                 'type': 'json',

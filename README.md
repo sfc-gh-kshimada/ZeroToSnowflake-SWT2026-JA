@@ -1007,7 +1007,7 @@ FROM TABLE(
 );
 ```
 
-PII として識別されたカラムにカスタムの `governance.pii` タグが `apply_method = AUTO` で適用されていることに注目してください。
+PII として識別されたカラムにカスタムの `governance.pii` タグが `apply_method = CLASSIFIED` で適用されていることに注目してください。
 
 ### マスキングポリシー
 
@@ -1290,8 +1290,17 @@ USE ROLE tb_admin;
 
 Snowsight UI でトラストセンターに移動します：
 
-1.  左側ナビゲーションバーの **Monitoring** タブをクリックします。
-2.  **Trust Center** をクリックします。
+1.  左側ナビゲーションバーの **ガバナンスとセキュリティ** をクリックします。
+2.  **トラストセンター** をクリックします。
+3.  **スキャナーを管理** をクリックします。
+
+> **★ スキャナーが表示されない場合（トライアルアカウント特有の注意）**
+>
+> 作成直後のトライアルアカウントでは、`ACCOUNTADMIN` で `TRUST_CENTER_ADMIN` / `TRUST_CENTER_VIEWER` を付与しても、スキャナーが一覧に表示されないことがあります。
+>
+> これは権限付与の失敗ではなく、トラストセンター側の内部セットアップが完了するまで待ち時間が発生するためです。**数時間から最大 24 時間程度**かかる場合があります。
+>
+> 表示されない場合、権限を付け直す必要はありません。本セクションはオプションのため、そのまま次章に進んでください。当日中に確認したい場合は、**ハンズオン開始の前日までにトライアルアカウントを作成しておく**と表示される可能性が高まります。
 
 #### ステップ 2 - スキャナーパッケージの有効化
 
@@ -1479,7 +1488,7 @@ WITH translated AS (
     ORDER BY truck_brand_name, primary_city ASC LIMIT 100
 ), analyzed AS (
     SELECT truck_brand_name, review_ja,
-        AI_COMPLETE('claude-sonnet-4-6', review_ja,
+        AI_COMPLETE('claude-sonnet-5', review_ja,
             response_format => {'type': 'json', 'schema': {'type': 'object',
                 'properties': {'complaint': {'type': 'string'}, 'praise': {'type': 'string'}},
                 'required': ['complaint', 'praise']}}
@@ -1568,7 +1577,7 @@ CREATE OR REPLACE CORTEX SEARCH SERVICE TB_101.HARMONIZED.TASTY_BYTES_REVIEW_SEA
 
 **Cortex Search へのアクセス**
 
-1.  Snowsight を開き、**AI & ML → Cortex AI → Search** に移動します。
+1.  Snowsight を開き、**AIとML → 検索** に移動します。
 2.  **Create** をクリックしてセットアップを開始します。
 
 ![assets/vignette-3/cortex-search-access.png](assets/vignette-3/cortex-search-access.png)
@@ -1593,7 +1602,7 @@ CREATE OR REPLACE CORTEX SEARCH SERVICE TB_101.HARMONIZED.TASTY_BYTES_REVIEW_SEA
 
 **作成済みサービスの確認**
 
-Snowsight の左側メニューから **AI & ML** → **Cortex Search** を開き、ドロップダウンフィルターを `TB_101 / HARMONIZED` に設定すると、作成したサービスが一覧に表示されます。
+Snowsight の左側メニューから **AIとML** → **検索** を開き、ドロップダウンフィルターを `TB_101 / HARMONIZED` に設定すると、作成したサービスが一覧に表示されます。
 
 ![assets/vignette-3/cortex-search-existing-service.png](assets/vignette-3/cortex-search-existing-service.png)
 
@@ -1614,7 +1623,7 @@ Snowsight の左側メニューから **AI & ML** → **Cortex Search** を開�
 
 SQL で動作を確認したら、次は UI で対話的に検索します。
 
-1.  Snowsight の左側メニューから **AI & ML** → **Cortex Search** を開きます。
+1.  Snowsight の左側メニューから **AIとML** → **検索** を開きます。
 2.  一覧から `TASTY_BYTES_REVIEW_SEARCH` を選択します。
 3.  ステータスが **Active** になっていることを確認します。
 4.  画面右上の **Playground** をクリックします。
@@ -1742,7 +1751,7 @@ SELECT * FROM SEMANTIC_VIEW(
 
 **Cortex Analyst へのアクセス**
 
-1. Snowsight で **AI & ML → Cortex AI → AI Studio** の **Cortex Analyst** に移動します。
+1. Snowsight で **AIとML** の **アナリスト** に移動します。
 
 ![assets/vignette-3/cortex-analyst-nav.png](assets/vignette-3/cortex-analyst-nav.png)
 
@@ -1785,9 +1794,11 @@ SELECT * FROM SEMANTIC_VIEW(
 
 作成した Semantic View に対して、自然言語で質問します。
 
-1.  Snowsight の左側メニューから **AI & ML** → **Cortex Analyst** を開きます。
-2.  セマンティックビューの一覧から `TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS` を選択します。
-3.  ロールを `TB_DATA_ENGINEER`、ウェアハウスを `TB_CORTEX_WH` に設定します。
+1.  Snowsight の左側メニューから **AIとML** → **アナリスト** を開きます。
+2.  データベースに **TB_101**、スキーマに **SEMANTIC_LAYER** を選択します。
+3.  セマンティックビューの一覧から `TASTY_BYTES_BUSINESS_ANALYTICS` を選択します。
+4.  「セマンティックビューアクセス」と表示される場合は、ロールを `TB_DATA_ENGINEER` に切り替えて表示します。
+5.  **プレイグラウンド** を選択し、チャット欄にプロンプトを入力します。
 
 チャットインターフェースをフルスクリーンで使う場合は、右上の **3 点メニュー（省略記号）** から **Enter fullscreen mode** を選択します。
 
@@ -1891,7 +1902,7 @@ COO が Q3 の収益低下の原因を理解する必要がある場合、顧客
 `vignette-4_2.sql` の PART 3 を実行します。エージェントは `CREATE AGENT ... FROM SPECIFICATION` で、仕様を JSON で定義します。
 
 ```sql
-CREATE OR REPLACE AGENT SNOWFLAKE_INTELLIGENCE.AGENTS.TASTY_BYTES_INTELLIGENCE_AGENT
+CREATE OR REPLACE AGENT TB_101.SEMANTIC_LAYER.TASTY_BYTES_BI_AGENT
 WITH PROFILE='{"display_name":"Tasty Bytes Business Intelligence Agent"}'
 COMMENT = 'Tasty Bytes の顧客フィードバックと業績データを統合分析するエージェント'
 FROM SPECIFICATION $$
@@ -1931,25 +1942,20 @@ $$;
 作成後、権限を付与します。
 
 ```sql
-GRANT USAGE ON AGENT SNOWFLAKE_INTELLIGENCE.AGENTS.TASTY_BYTES_INTELLIGENCE_AGENT
+GRANT USAGE ON AGENT TB_101.SEMANTIC_LAYER.TASTY_BYTES_BI_AGENT
   TO ROLE TB_DATA_ENGINEER;
 ```
 
-> **`Object does not exist` エラーが出た場合：** `SNOWFLAKE_INTELLIGENCE.AGENTS` スキーマが存在しない可能性があります。`ACCOUNTADMIN` で以下を実行してください。
->
-> ```sql
-> CREATE DATABASE IF NOT EXISTS SNOWFLAKE_INTELLIGENCE;
-> CREATE SCHEMA   IF NOT EXISTS SNOWFLAKE_INTELLIGENCE.AGENTS;
-> ```
+最後に、作成したエージェントを Snowflake CoWork に登録します。**この登録を行わないと CoWork のエージェント選択に表示されません。**
 
-> **CoWork にエージェントが表示されない場合：** `MODIFY privilege` エラーが出るときは、`ACCOUNTADMIN` で以下を実行します。
->
-> ```sql
-> CREATE SNOWFLAKE INTELLIGENCE SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT;
->
-> ALTER SNOWFLAKE INTELLIGENCE SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT
->   ADD AGENT SNOWFLAKE_INTELLIGENCE.AGENTS.TASTY_BYTES_INTELLIGENCE_AGENT;
-> ```
+```sql
+USE ROLE ACCOUNTADMIN;
+CREATE SNOWFLAKE INTELLIGENCE IF NOT EXISTS SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT;
+ALTER SNOWFLAKE INTELLIGENCE SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT
+  ADD AGENT TB_101.SEMANTIC_LAYER.TASTY_BYTES_BI_AGENT;
+```
+
+> **`MODIFY privilege` エラーが出た場合：** 上記の `CREATE SNOWFLAKE INTELLIGENCE` が未実行の可能性があります。`ACCOUNTADMIN` で実行しているか確認してください。
 
 <details>
 <summary><b>参考：UI からエージェントを作成する場合の画面イメージ（クリックで展開）</b></summary>
@@ -1958,10 +1964,10 @@ GRANT USAGE ON AGENT SNOWFLAKE_INTELLIGENCE.AGENTS.TASTY_BYTES_INTELLIGENCE_AGEN
 
 **エージェントの作成**
 
-1.  **Snowsight** で **AI & ML Studio** に移動し、**Agents** を選択します。
+1.  **Snowsight** で **AIとML** に移動し、**エージェント** を選択します。
 2.  **Create Agent** をクリックします。
 3.  **Platform integration**：「Create this agent for Snowflake Intelligence」にチェックが入っていることを確認します。
-4.  **Database and schema**：デフォルトで `SNOWFLAKE_INTELLIGENCE.AGENTS` になります。
+4.  **Database and schema**：本ハンズオンでは `TB_101.SEMANTIC_LAYER` を指定します（デフォルトは `SNOWFLAKE_INTELLIGENCE.AGENTS`）。
 5.  **Agent object name** と **Display name** を入力し **Create agent** をクリックします。
 
 ![snowflake-intelligence-create-agent](assets/vignette-3/snowflake-intelligence-create-agent.png)
@@ -2006,8 +2012,8 @@ Display name と Description を設定します。
 
 #### 3-3. UI（Snowflake CoWork）でテスト
 
-1.  Snowsight の左側メニューから **AI & ML** → **Snowflake Intelligence**（または **CoWork**）を開きます。
-2.  エージェント選択で `Tasty Bytes Business Intelligence Agent` を選びます。
+1.  Snowsight の左側メニューから **AIとML** → **Snowflake CoWork** を開きます（環境によっては **Snowflake Intelligence** と表示されます）。
+2.  エージェント選択で `TASTY_BYTES_BI_AGENT` を選びます。
 3.  ロールが `TB_DATA_ENGINEER`（または `ACCOUNTADMIN`）になっていることを確認します。
 
 ![snowflake-intelligence-interface](assets/vignette-3/snowflake-intelligence-interface.gif)

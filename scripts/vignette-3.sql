@@ -127,7 +127,7 @@ CALL governance.tb_classification_profile!SET_TAG_MAP(
 -- customer_loyalty テーブルを自動分類 (実行に数秒かかります)
 CALL SYSTEM$CLASSIFY('tb_101.raw_customer.customer_loyalty', 'tb_101.governance.tb_classification_profile');
 
--- タグ付け結果の確認 (apply_method = AUTO となっていれば自動タグ付け成功)
+-- タグ付け結果の確認 (apply_method = CLASSIFIED となっていれば自動タグ付け成功)
 SELECT
     column_name,
     tag_database,
@@ -358,8 +358,24 @@ USE ROLE tb_admin;
 
 /*  6-2. Snowsight で Trust Center を開く（UI 操作）
     ------------------------------------------------------------------
-    1. 左側ナビゲーションバーの「Monitoring」をクリック
-    2. 「Trust Center」をクリック
+    1. 左側ナビゲーションバーの「ガバナンスとセキュリティ」をクリック
+    2. 「トラストセンター」をクリック
+    3. 「スキャナーを管理」をクリック
+
+    ★ スキャナーが表示されない場合（トライアルアカウント特有の注意）
+      ------------------------------------------------------------------
+      作成直後のトライアルアカウントでは、ACCOUNTADMIN で
+      TRUST_CENTER_ADMIN / TRUST_CENTER_VIEWER を付与しても
+      スキャナーが一覧に表示されないことがあります。
+
+      これは権限付与の失敗ではなく、Trust Center 側の内部セットアップが
+      完了するまで待ち時間が発生するためです。数時間から最大 24 時間程度
+      かかる場合があります。
+
+      → 表示されない場合は権限を付け直す必要はありません。
+        本セクションはオプションのため、そのまま次章に進んでください。
+        当日中に確認したい場合は、ハンズオン開始の前日までに
+        トライアルアカウントを作成しておくと表示される可能性が高まります。
 */
 
 /*  6-3. スキャナーパッケージの有効化（UI 操作）

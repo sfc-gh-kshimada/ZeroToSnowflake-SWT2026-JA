@@ -146,7 +146,7 @@ FROM TABLE(FLATTEN(
     SQL で動作を確認したら、次は UI で対話的に検索してみましょう。
 
     【操作手順】
-      1. Snowsight の左側メニューから「AI & ML」→「Cortex Search」を開く
+      1. Snowsight の左側メニューから「AIとML」→「検索」を開く
       2. 一覧から TASTY_BYTES_REVIEW_SEARCH を選択
       3. ステータスが「Active」になっていることを確認
       4. 画面右上の「Playground」をクリック
@@ -498,11 +498,12 @@ SELECT * FROM SEMANTIC_VIEW(
     作成した Semantic View に対して、自然言語で質問してみましょう。
 
     【操作手順】
-      1. Snowsight の左側メニューから「AI & ML」→「Cortex Analyst」を開く
-      2. セマンティックビューの一覧から
+      1. Snowsight の左側メニューから「AIとML」→「アナリスト」を開く
+      2. データベースに「TB_101」、スキーマに「SEMANTIC_LAYER」を選択
+      3. セマンティックビューの一覧から
          TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS を選択
-      3. ロールを TB_DATA_ENGINEER、ウェアハウスを TB_CORTEX_WH に設定
-      4. チャット欄に以下のプロンプトを入力する
+      4. (セマンティックビューアクセスと表示される場合) ロールを TB_DATA_ENGINEERに切り替えて表示
+      5. 「プレイグラウンド」を選択し、チャット欄に以下のプロンプトを入力する
 
     【プロンプト例 — 基本（AI_VERIFIED_QUERIES に登録済み）】
       検証済みクエリとして登録してあるため、安定して正しい SQL が返る。
@@ -547,14 +548,14 @@ SELECT * FROM SEMANTIC_VIEW(
 
 
 -- ============================================================
--- PART 3: Cortex Agent — BI エージェントの構築
+-- PART 3: Cortex Agents — BI エージェントの構築
 -- ============================================================
 /*  3-1. ★スライド★ Cortex Agents / Snowflake CoWork の座学
     ------------------------------------------------------------------
     ここで講師のスライド解説を聞いてください。
 
     要点:
-      - Cortex Agent は複数のツールを束ね、質問に応じて使い分けるオーケストレーション層
+      - Cortex Agents は複数のツールを束ね、質問に応じて使い分けるオーケストレーション層
       - PART 1 の Cortex Search（非構造化）と PART 2 の Semantic View（構造化）を
         1 つのエージェントから呼び出せる
       - 「評判の良いブランドの売上は？」のような複合質問は、
@@ -624,14 +625,19 @@ $$;
 -- 作成されたエージェントを確認する
 SHOW AGENTS IN SCHEMA TB_101.SEMANTIC_LAYER;
 
+-- 作成したエージェントを Snowflake CoWork に追加する
+USE ROLE ACCOUNTADMIN;
+CREATE SNOWFLAKE INTELLIGENCE IF NOT EXISTS SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT;
+ALTER SNOWFLAKE INTELLIGENCE SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT
+  ADD AGENT TB_101.SEMANTIC_LAYER.TASTY_BYTES_BI_AGENT;
+
 
 /*  3-3. UI (Snowflake CoWork) でテスト
     ------------------------------------------------------------------
     作成したエージェントと対話し、2 つのツールが使い分けられることを確認します。
 
     【操作手順】
-      1. Snowsight を開き「AI & ML Studio」から「Snowflake CoWork」を選択
-         （環境によっては「Snowflake Intelligence」と表示されます）
+      1. Snowsight を開き「AIとML」から「Snowflake CoWork」を選択
       2. エージェント選択で TASTY_BYTES_BI_AGENT を選ぶ
       3. チャット欄に以下のプロンプトを入力する
 
@@ -658,8 +664,7 @@ SHOW AGENTS IN SCHEMA TB_101.SEMANTIC_LAYER;
           → SALES_ANALYST で下位都市を特定
             → REVIEW_SEARCH で各都市のレビューから不満点を抽出
 
-      (j) 都市別・ブランド別の売上トップ5を出して、
-          上位ブランドの顧客レビューの傾向も教えてください。
+      (j) 都市別・ブランド別の売上トップ5を出して、上位ブランドの顧客レビューの傾向も教えてください。
 
     【観察のポイント】
       - 回答の生成過程（どのツールを何回呼んだか）を UI 上で確認する
