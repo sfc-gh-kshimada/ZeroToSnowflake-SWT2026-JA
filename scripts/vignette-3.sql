@@ -8,6 +8,7 @@ Copyright(c): 2025 Snowflake Inc. All rights reserved.
   2. 自動分類 & PII タグ — 分類プロファイルで PII カラムを自動検出・タグ付け
   3. Dynamic Masking      — pii タグに紐付くマスキングポリシーで列値を難読化
   4. Row Access Policy    — ロールごとに参照可能な国を制限
+  5. Data Metric Function — 組み込み / カスタム DMF でデータ品質をチェック
 
 前提条件:
   - setup.sql 実行済み（tb_101 DB, raw_customer/governance スキーマ, tb_admin/tb_data_engineer 等のロール, tb_dev_wh ウェアハウス）
@@ -61,6 +62,14 @@ GRANT APPLY TAG ON ACCOUNT TO ROLE tb_data_steward;
 GRANT EXECUTE AUTO CLASSIFICATION ON SCHEMA raw_customer TO ROLE tb_data_steward;
 GRANT DATABASE ROLE SNOWFLAKE.CLASSIFICATION_ADMIN TO ROLE tb_data_steward;
 GRANT CREATE SNOWFLAKE.DATA_PRIVACY.CLASSIFICATION_PROFILE ON SCHEMA governance TO ROLE tb_data_steward;
+
+-- データ品質モニタリングの権限（Section 5 で使用）
+-- 組み込み DMF の手動呼び出しには対象テーブルへの SELECT が必要
+GRANT SELECT ON ALL TABLES IN SCHEMA raw_pos TO ROLE tb_data_steward;
+-- 不正レコードを挿入して DMF の検知を確認するために INSERT が必要
+GRANT INSERT ON TABLE raw_pos.order_detail TO ROLE tb_data_steward;
+-- カスタム DMF を governance スキーマに作成するための権限
+GRANT CREATE DATA METRIC FUNCTION ON SCHEMA governance TO ROLE tb_data_steward;
 
 -- 現在のユーザーに tb_data_steward を付与
 SET my_user = CURRENT_USER();
@@ -223,11 +232,109 @@ ORDER BY cnt DESC;
 
 
 /*==================================================================================================
+ 5. データ品質モニタリング (Data Metric Functions)
+   ガバナンスは「守る」だけでなく「データを信頼できる状態に保つ」ことも含む。
+   Snowflake の Data Metric Function (DMF) で、テーブルの品質チェックを SQL で表現する。
+==================================================================================================*/
+
+USE ROLE tb_data_steward;
+USE WAREHOUSE tb_dev_wh;
+
+/*  5-1. 組み込み DMF による即座の品質チェック
+    ------------------------------------------------------------------
+    Snowflake は SNOWFLAKE.CORE スキーマに組み込み DMF を用意している。
+    定義不要で、関数を呼ぶだけで品質を測定できる。
+    （組み込み DMF の USAGE は全ユーザーに付与済みのため追加設定は不要）
+
+    注意: DMF の引数に指定できるのはテーブル・ビューなどの実オブジェクトのみ。
+          CTE やサブクエリを渡すと「only supports table-like objects」エラーになる。
+*/
+
+-- 顧客 ID が NULL の割合（顧客紐付けの欠損率）
+SELECT SNOWFLAKE.CORE.NULL_PERCENT(SELECT customer_id FROM raw_pos.order_header) AS null_customer_pct;
+
+-- 注文 ID の重複数（主キーとして一意であるべき）
+SELECT SNOWFLAKE.CORE.DUPLICATE_COUNT(SELECT order_id FROM raw_pos.order_header) AS duplicate_order_ids;
+
+-- 注文金額の平均値（外れ値や単位誤りの兆候を掴む）
+SELECT SNOWFLAKE.CORE.AVG(SELECT order_total FROM raw_pos.order_header) AS avg_order_total;
+
+/*  5-2. カスタム DMF の作成
+    ------------------------------------------------------------------
+    組み込み DMF では表現できない「業務ルール違反」を検出したい場合は、
+    カスタム DMF を作成する。
+
+    ここでは「注文合計金額が 単価 × 数量 と一致しない」明細を検出する。
+    DMF はテーブル型の引数を受け取り、数値をひとつ返す関数として定義する。
+*/
+CREATE OR REPLACE DATA METRIC FUNCTION governance.invalid_order_total_count(
+    order_prices_t TABLE(
+        order_total NUMBER,
+        unit_price NUMBER,
+        quantity INTEGER
+    )
+)
+RETURNS NUMBER
+AS
+'SELECT COUNT(*)
+ FROM order_prices_t
+ WHERE order_total != unit_price * quantity';
+
+-- 挿入前のベースラインを確認する（この件数が「正常時の水準」となる）
+SELECT governance.invalid_order_total_count(
+    SELECT price, unit_price, quantity FROM raw_pos.order_detail
+) AS invalid_rows_before;
+
+/*  5-3. わざと壊して検知させる
+    ------------------------------------------------------------------
+    単価 $5 の商品を 2 個注文したので合計は $10 が正しいが、
+    合計金額を $5 として登録した不正な明細を挿入する。
+    その後で DMF を呼び出し、違反が検知されることを確認する。
+*/
+INSERT INTO raw_pos.order_detail
+SELECT
+    904745399, -- 注文詳細 ID（他の演習と衝突しない値）
+    459520442, -- 注文 ID
+    52,        -- メニューアイテム ID
+    NULL,
+    0,
+    2,         -- 数量
+    5.0,       -- 単価
+    5.0,       -- 合計金額（本来は 5.0 * 2 = 10.0 であるべき → 業務ルール違反）
+    NULL;
+
+-- DMF を再度呼び出すと、ベースラインより 1 件増えていることが確認できる
+SELECT governance.invalid_order_total_count(
+    SELECT price, unit_price, quantity FROM raw_pos.order_detail
+) AS invalid_rows_after;
+
+/*
+    ここまでは DMF を「手動で呼び出して」品質を測定した。
+    実運用では DMF をテーブルに関連付けてスケジュール実行し、
+    データが変更されるたびに自動でチェックさせることができる
+    （ALTER TABLE ... SET DATA_METRIC_SCHEDULE / ADD DATA METRIC FUNCTION）。
+    スケジュール実行はサーバーレスコンピュートを消費するため、
+    本ハンズオンでは手動呼び出しまでに留めている。
+
+    参考: https://docs.snowflake.com/ja/user-guide/data-quality-intro
+*/
+
+
+/*==================================================================================================
  (オプション) クリーンアップ
    ハンズオン後に作成オブジェクトを削除する場合は以下のブロックを実行してください。
 ==================================================================================================*/
 /*
 USE ROLE accountadmin;
+
+-- 検証用に挿入した不正レコードを削除
+DELETE FROM tb_101.raw_pos.order_detail WHERE order_detail_id = 904745399;
+
+-- カスタム DMF の削除
+-- 引数の型は内部で正規化されるため、シグネチャ不一致でエラーになる場合は
+-- SHOW DATA METRIC FUNCTIONS IN SCHEMA tb_101.governance; で実際の型を確認する
+DROP DATA METRIC FUNCTION IF EXISTS tb_101.governance.invalid_order_total_count(
+    TABLE(NUMBER, NUMBER, NUMBER));
 
 -- Row Access Policy を解除して削除
 ALTER TABLE tb_101.raw_customer.customer_loyalty
