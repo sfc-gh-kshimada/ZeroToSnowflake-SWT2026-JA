@@ -9,7 +9,7 @@ Original (English): https://www.snowflake.com/en/developers/guides/zero-to-snowf
 ### 概要
 
 Zero to Snowflake クイックスタートへようこそ！
-このガイドは、Snowflake AI Data Cloud の主要な領域を網羅した総合的なハンズオンです。仮想ウェアハウスとデータ変換の基礎から始まり、自動化されたデータパイプラインを構築します。その後、Snowflake Cortex AI 関数を使った簡単な SQL コマンドで顧客レビューのセンチメント分析を即座に行い、Cortex Search でインテリジェントなテキスト検索を行い、Cortex Analyst による会話形式のビジネスインテリジェンスを活用する方法を学びます。最後に、強力なガバナンス制御でデータを保護し、シームレスなデータコラボレーションを通じて分析を強化する方法を学びます。
+このガイドは、Snowflake AI Data Cloud の主要な領域を網羅した総合的なハンズオンです。仮想ウェアハウスとデータ変換の基礎から始まり、自動化されたデータパイプラインを構築します。次に Horizon の強力なガバナンス制御でデータを保護し、最後に Snowflake Cortex AI 関数で顧客レビューを分析したうえで、Cortex Search・Semantic View・Cortex Agent を **SQL（DDL）で構築**して会話型ビジネスインテリジェンスを実現します。
 
 これらの概念は、架空のフードトラック企業「Tasty Bytes」のサンプルデータセットを使って適用し、データ運用の改善と効率化を図ります。このデータセットをいくつかのワークロード別シナリオで探索し、Snowflake がビジネスにもたらすメリットを実証します。
 
@@ -45,9 +45,11 @@ Zero to Snowflake クイックスタートへようこそ！
 
   - **Vignette 1: Snowflake 入門:** 仮想ウェアハウス、キャッシュ、クローニング、タイムトラベルの基礎。
   - **Vignette 2: シンプルなデータパイプライン:** ダイナミックテーブルを使った半構造化データの取り込みと変換方法。
-  - **Vignette 3: Horizon によるガバナンス:** ロール、分類、マスキング、行アクセスポリシーでデータを保護する方法。
-  - **Vignette 4: Snowflake Cortex AI:** 実験、スケーラブルな分析、AI 支援開発、会話型ビジネスインテリジェンスのために Snowflake の包括的な AI 機能を活用する方法。
-  - **Vignette 5: アプリとコラボレーション:** Snowflake マーケットプレイスを活用して、内部データをサードパーティデータセットで強化する方法。
+  - **Vignette 3: Horizon によるガバナンス:** ロール、分類、マスキング、行アクセスポリシーでデータを保護する方法。（オプションで Data Metric Function とトラストセンター）
+  - **Vignette 4: Snowflake Cortex AI:** AI 関数によるレビュー分析と、Cortex Search / Semantic View / Cortex Agent を SQL で構築して会話型 BI を実現する方法。
+  - **（オプション）Vignette 5: アプリとコラボレーション:** Snowflake マーケットプレイスを活用して、内部データをサードパーティデータセットで強化する方法。
+
+> **本編は Vignette 1〜4 です。** 「（オプション）」と記した節・章は、時間に余裕がある場合またはハンズオン後にご自身のパースでお試しいただけます。
 
 ### 構築するもの
 
@@ -800,7 +802,8 @@ Snowflake には Snowsight に統合された AI エージェント **CoCo (Cort
 - ダイナミックデータマスキングによるカラムレベルセキュリティの実装方法。
 - 行アクセスポリシーによる行レベルセキュリティの実装方法。
 - タグ伝播（Tag Propagation）でビューや派生テーブルにガバナンスを自動継承させる方法。
-- トラストセンターによるアカウントセキュリティの監視方法。
+- （オプション）Data Metric Function でデータ品質をチェックする方法。
+- （オプション）トラストセンターによるアカウントセキュリティの監視方法。
 
 ### 構築するもの
 - カスタムの特権ロール（`tb_data_steward`）。
@@ -808,12 +811,13 @@ Snowflake には Snowsight に統合された AI エージェント **CoCo (Cort
 - `PROPAGATE` 設定済みの PII タグと、文字列・日付カラム用のタグベースマスキングポリシー。
 - 国別にデータの可視性を制限する行アクセスポリシー。
 - 上流テーブルからタグ・ポリシーが自動伝播する下流ビュー。
+- （オプション）業務ルール違反を検出するカスタム Data Metric Function。
 
 ### SQL コードを取得して SQL ファイルに貼り付けます。
 
 **この[ファイル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-3.sql)の SQL を新しい SQL ファイルにコピーして貼り付け、Snowflake で手順に沿って進めてください。**
 
-**SQL ファイルの最後まで到達したら、[ステップ 29 - Snowflake Cortex AI](/en/developers/guides/zero-to-snowflake/)にスキップできます。**
+> **章の構成:** セクション 1〜4（RBAC / 分類 / マスキング / 行アクセスポリシー）が必須です。セクション 5（Data Metric Function）とセクション 6（トラストセンター）は時間に余裕がある場合のオプションです。
 
 ### ロールとアクセス制御
 
@@ -1176,10 +1180,98 @@ SELECT TOP 50 * FROM tb_101.governance.customer_pii_downstream_v;
 
 > **ポイント**: ビューを再作成したり、新規派生資産にポリシーを再設定する必要はありません。タグ伝播 + タグベースのポリシー適用により、ガバナンスがリネージに沿って自動的に拡張されます。
 
-### トラストセンター
+### オプション：データ品質モニタリング（Data Metric Functions）
 
 
 #### 概要
+
+> **★ このセクションはオプションです。** 時間に余裕がある場合に実施してください。
+
+ガバナンスはデータを「守る」だけでなく、「データを信頼できる状態に保つ」ことも含みます。Snowflake の **Data Metric Function（DMF）** を使うと、テーブルの品質チェックを SQL で表現できます。組み込み DMF をそのまま呼び出すことも、業務固有のルールをカスタム DMF として定義することもできます。
+
+> **[データ品質モニタリング](https://docs.snowflake.com/ja/user-guide/data-quality-intro)**: 組み込みおよびカスタム Data Metric Functions を使ってデータの一貫性と信頼性を確保する方法について。
+
+#### ステップ 1 - 組み込み DMF による品質チェック
+
+Snowflake は `SNOWFLAKE.CORE` スキーマに組み込み DMF を用意しています。定義不要で、関数を呼ぶだけで品質を測定できます。組み込み DMF の USAGE は全ユーザーに付与済みのため、追加設定は不要です。
+
+```sql
+USE ROLE tb_data_steward;
+USE WAREHOUSE tb_dev_wh;
+
+-- 顧客 ID が NULL の割合（顧客紐付けの欠損率）
+SELECT SNOWFLAKE.CORE.NULL_PERCENT(SELECT customer_id FROM raw_pos.order_header) AS null_customer_pct;
+
+-- 注文 ID の重複数（主キーとして一意であるべき）
+SELECT SNOWFLAKE.CORE.DUPLICATE_COUNT(SELECT order_id FROM raw_pos.order_header) AS duplicate_order_ids;
+
+-- 注文金額の平均値（外れ値や単位誤りの兆候を掴む）
+SELECT SNOWFLAKE.CORE.AVG(SELECT order_total FROM raw_pos.order_header) AS avg_order_total;
+```
+
+> **注意**: DMF の引数に指定できるのはテーブル・ビューなどの実オブジェクトのみです。CTE やサブクエリを渡すと `only supports table-like objects` エラーになります。また `ROW_COUNT` などの 0 引数 DMF は手動呼び出しできず、テーブルに関連付けたときのみ使用できます。
+
+#### ステップ 2 - カスタム DMF の作成
+
+組み込み DMF では表現できない「業務ルール違反」を検出したい場合は、カスタム DMF を作成します。ここでは「注文合計金額が 単価 × 数量 と一致しない」明細を検出します。
+
+```sql
+CREATE OR REPLACE DATA METRIC FUNCTION governance.invalid_order_total_count(
+    order_prices_t TABLE(
+        order_total NUMBER,
+        unit_price NUMBER,
+        quantity INTEGER
+    )
+)
+RETURNS NUMBER
+AS
+'SELECT COUNT(*)
+ FROM order_prices_t
+ WHERE order_total != unit_price * quantity';
+```
+
+挿入前のベースラインを確認します。この件数が「正常時の水準」となります。
+
+```sql
+SELECT governance.invalid_order_total_count(
+    SELECT price, unit_price, quantity FROM raw_pos.order_detail
+) AS invalid_rows_before;
+```
+
+#### ステップ 3 - わざと壊して検知させる
+
+単価 $5 の商品を 2 個注文したので合計は $10 が正しいところ、合計金額を $5 として登録した不正な明細を挿入します。
+
+```sql
+INSERT INTO raw_pos.order_detail
+SELECT
+    904745399, -- 注文詳細 ID
+    459520442, -- 注文 ID
+    52,        -- メニューアイテム ID
+    NULL,
+    0,
+    2,         -- 数量
+    5.0,       -- 単価
+    5.0,       -- 合計金額（本来は 5.0 * 2 = 10.0 → 業務ルール違反）
+    NULL;
+```
+
+DMF を再度呼び出すと、ベースラインより 1 件増えていることが確認できます。
+
+```sql
+SELECT governance.invalid_order_total_count(
+    SELECT price, unit_price, quantity FROM raw_pos.order_detail
+) AS invalid_rows_after;
+```
+
+> **ポイント**: ここまでは DMF を手動で呼び出しました。実運用では `ALTER TABLE ... SET DATA_METRIC_SCHEDULE` と `ADD DATA METRIC FUNCTION` でテーブルに関連付け、データが変更されるたびに自動チェックさせることができます。スケジュール実行はサーバーレスコンピュートを消費するため、本ハンズオンでは手動呼び出しまでに留めています。
+
+### オプション：トラストセンター
+
+
+#### 概要
+
+> **★ このセクションはオプションです。** 時間に余裕がある場合に実施してください。本セクションは Snowsight の UI 操作が主体で、SQL は権限付与のみです。
 
 トラストセンターは、Snowflake アカウント全体のセキュリティリスクを監視するための集中型ダッシュボードを提供します。スケジュールされたスキャナーを使って、MFA の欠如、過剰な権限を持つロール、非アクティブなユーザーなどの問題を確認し、推奨アクションを提供します。
 
@@ -1229,6 +1321,8 @@ Snowsight UI でトラストセンターに移動します：
   - 任意の違反をクリックすると、サマリーと推奨される修復手順を含む詳細ペインが開きます。
   - リストを重大度、ステータス、またはスキャナーパッケージでフィルタリングして、最も重要な問題に集中できます。
 
+![assets/vignette-4/trust_center_findings.png](assets/vignette-4/trust_center_findings.png)
+
 ![assets/vignette-4/trust_center_violation_detail_pane.png](assets/vignette-4/trust_center_violation_detail_pane.png)
 
 この強力なツールにより、Snowflake アカウントのセキュリティ健全性について継続的で実行可能な概要が得られます。
@@ -1240,22 +1334,43 @@ Snowsight UI でトラストセンターに移動します：
 
 Snowflake Cortex AI に焦点を当てた Zero to Snowflake ガイドへようこそ！
 
-このガイドでは、AI 関数を使ったスケーラブルなレビュー分析から、Cortex Search・Cortex Analyst・Cortex Agent を使った統合 BI エージェントの構築まで、Snowflake の AI プラットフォームを探索します。
+このガイドでは、AI 関数を使ったスケーラブルなレビュー分析から、Cortex Search・Semantic View（Cortex Analyst）・Cortex Agent を使った統合 BI エージェントの構築まで、Snowflake の AI プラットフォームを探索します。
 
 - Snowflake Cortex AI の詳細については、[Snowflake AI および ML 概要ドキュメント](https://docs.snowflake.com/ja/guides-overview-ai-features)を参照してください。
+
+### 章の構成
+
+本章は 2 つの SQL ファイルに分かれています。
+
+| ファイル | 内容 |
+| --- | --- |
+| [`vignette-4_1.sql`](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-4_1.sql) | AI 関数によるレビュー分析 |
+| [`vignette-4_2.sql`](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/vignette-4_2.sql) | BI エージェントの構築（3 パート構成） |
+
+`vignette-4_2.sql` は「**座学 → SQL で作成 → UI でテスト**」を 3 回繰り返す構成です。
+
+| PART | 作成するもの | テスト方法 |
+| --- | --- | --- |
+| **PART 1** | Cortex Search Service（非構造化データの意味検索） | SQL + Playground（UI） |
+| **PART 2** | Semantic View（構造化データへの意味付け） | Cortex Analyst（UI） |
+| **PART 3** | Cortex Agent（2 ツールを束ねる） | Snowflake CoWork（UI） |
+
+> **オブジェクトの作成は SQL（DDL）で行います。** 本ハンズオンはデータエンジニア向けのため、再現性とバージョン管理のしやすさを重視して SQL を正とします。同じことは Snowsight の UI からも作成できるため、参考として UI 画面のイメージも掲載しています。
 
 ### 学習内容
 
 * `AI_CLASSIFY`・`AI_SENTIMENT`・`AI_COMPLETE`・`AI_AGG` などの AI 関数を使って顧客レビューをスケールで分析する方法。
-* インテリジェントなテキストおよびレビュー検索のために Cortex Search を使ってセマンティック検索を有効にする方法。
-* 自然言語によるビジネスインテリジェンスのために Cortex Analyst を使って会話型分析を作成する方法。
+* `CREATE CORTEX SEARCH SERVICE` でセマンティック検索サービスを構築し、SQL と Playground の両方でテストする方法。
+* `CREATE SEMANTIC VIEW` でビジネス指標を定義し、Cortex Analyst から自然言語でクエリする方法。
+* `CREATE AGENT` で Cortex Search と Cortex Analyst を束ね、Snowflake CoWork から対話する方法。
+* AI に「答えられないことを正しく答えさせる」ためのガードレール設計。
 
 ### 構築するもの
 
 * `AI_CLASSIFY`・`AI_SENTIMENT`・`AI_COMPLETE`・`AI_AGG` + `AI_TRANSLATE` を使った顧客レビュー分析パイプライン。
 * 即座の顧客フィードバック検索のための Cortex Search サービス。
-* 会話型データ探索のために Cortex Analyst を使った自然言語ビジネス分析インターフェース。
-* Cortex Search と Cortex Analyst を束ねた BI エージェント（Cortex Agent）。
+* 売上・注文・顧客行動を自然言語でクエリできる Semantic View（メトリクス約 25 種・ディメンション約 25 種）。
+* Cortex Search と Semantic View を束ねた BI エージェント（Cortex Agent）。
 
 
 ### AI 関数
@@ -1402,82 +1517,111 @@ GROUP BY truck_brand_name;
 
 `AI_CLASSIFY`・`AI_SENTIMENT`・`AI_COMPLETE`・`AI_AGG` の 4 つのコア関数を体験しました。各関数がそれぞれ異なる分析目的を果たし、生の顧客の声を包括的なビジネスインテリジェンスに変換します。モデルの構築や ML の専門知識は不要で、SQL を書くだけで何千ものレビューを処理し、データ主導の運用改善に不可欠なインサイトを提供します。
 
-### オプション：Cortex Search
+### PART 1: Cortex Search（非構造化データの意味検索）
 
 ![./assets/cortex_search_header.png](./assets/cortex_search_header.png)
 
-#### 概要
+#### 1-1. 座学 — Cortex Search とは
+
+> **ここで講師のスライド解説をお聞きください。**
 
 AI を活用したツールは複雑な分析クエリの生成に優れていますが、カスタマーサービスチームが日常的に直面する課題は、苦情や称賛のために特定の顧客レビューを素早く見つけることです。従来のキーワード検索は自然言語のニュアンスを捉えられないことが多く、不十分です。
 
-**[Snowflake Cortex Search](https://docs.snowflake.com/ja/user-guide/snowflake-cortex/cortex-search/cortex-search-overview)** は、Snowflake のテキストデータに対して低遅延・高品質な「ファジー」検索を提供することでこれを解決します。エンベディング、インフラ、チューニングを処理しながら、ハイブリッド（ベクターとキーワード）検索エンジンを素早くセットアップします。内部では、Cortex Search はセマンティック（意味ベース）とレキシカル（キーワードベース）の検索を組み合わせ、インテリジェントな再ランキングで最も関連性の高い結果を提供します。このラボでは、検索サービスを設定し、顧客レビューデータに接続して、セマンティッククエリを実行して主要な顧客フィードバックを積極的に特定します。
+**[Snowflake Cortex Search](https://docs.snowflake.com/ja/user-guide/snowflake-cortex/cortex-search/cortex-search-overview)** は、Snowflake のテキストデータに対して低遅延・高品質な「ファジー」検索を提供することでこれを解決します。エンベディング、インフラ、チューニングを処理しながら、ハイブリッド（ベクターとキーワード）検索エンジンを素早くセットアップします。内部では、Cortex Search はセマンティック（意味ベース）とレキシカル（キーワードベース）の検索を組み合わせ、インテリジェントな再ランキングで最も関連性の高い結果を提供します。
 
-#### ステップ 1 - Cortex Search へのアクセス
+#### 1-2. SQL で Cortex Search Service を作成
+
+`vignette-4_2.sql` の PART 1 を実行します。
+
+```sql
+CREATE OR REPLACE CORTEX SEARCH SERVICE TB_101.HARMONIZED.TASTY_BYTES_REVIEW_SEARCH
+  ON REVIEW
+  ATTRIBUTES REVIEW_ID, ORDER_ID, TRUCK_ID, LANGUAGE, PRIMARY_CITY, CUSTOMER_ID, DATE, TRUCK_BRAND_NAME
+  WAREHOUSE = TB_DE_WH
+  TARGET_LAG = '1 hour'
+  EMBEDDING_MODEL = 'snowflake-arctic-embed-l-v2.0'
+  AS (
+    SELECT REVIEW, REVIEW_ID, ORDER_ID, TRUCK_ID, LANGUAGE,
+           PRIMARY_CITY, CUSTOMER_ID, DATE, TRUCK_BRAND_NAME
+    FROM TB_101.HARMONIZED.TRUCK_REVIEWS_V
+    WHERE REVIEW IS NOT NULL
+  );
+```
+
+| パラメーター | 意味 |
+| --- | --- |
+| `ON` | ベクトル化・インデックス対象カラム |
+| `ATTRIBUTES` | 検索時に `filter` で絞り込みに使えるカラム |
+| `TARGET_LAG` | ベーステーブルの更新がインデックスに反映されるまでの最大遅延 |
+| `EMBEDDING_MODEL` | テキストをベクトル化する埋め込みモデル。`arctic-embed-l-v2.0` は多言語対応（日本語を含む） |
+
+> **重要：** サービス作成後、インデックス構築に数分かかります。完了前に検索するとヒット 0 件になります。次のコマンドで `Active` になるのを待ってください。
+>
+> ```sql
+> SHOW CORTEX SEARCH SERVICES LIKE 'TASTY_BYTES_REVIEW_SEARCH' IN SCHEMA TB_101.HARMONIZED;
+> ```
+
+<details>
+<summary><b>参考：UI から作成する場合の画面イメージ（クリックで展開）</b></summary>
+
+本ハンズオンでは SQL で作成しますが、Snowsight の UI からも同じサービスを作成できます。以下は参考イメージです。
+
+**Cortex Search へのアクセス**
 
 1.  Snowsight を開き、**AI & ML → Cortex AI → Search** に移動します。
 2.  **Create** をクリックしてセットアップを開始します。
 
-これにより検索サービス設定インターフェースが開き、Snowflake がテキストデータをインデックス化して解釈する方法を定義します。
-
 ![assets/vignette-3/cortex-search-access.png](assets/vignette-3/cortex-search-access.png)
 
-#### ステップ 2 - 検索サービスの設定
+**検索サービスの設定**
 
-**New service** 設定画面で：
-
-1. **Database** と **Schema** を選択：
-   * Databases ドロップダウンから **TB_101** を選択
-   * Schemas ドロップダウンから **HARMONIZED** を選択
-2. **Service name** に入力：`customer_feedback_intelligence`
-3. 右下の **Next** ボタンをクリックして次に進みます。
+**New service** 設定画面で Database に **TB_101**、Schema に **HARMONIZED** を選択し、Service name を入力して **Next** をクリックします。
 
 ![assets/vignette-3/cortex-search-new-service.png](assets/vignette-3/cortex-search-new-service.png)
 
+**レビューデータへの接続**
 
-#### ステップ 3 - レビューデータへの接続
+ウィザードが複数の設定画面を案内します。
 
-ウィザードが複数の設定画面を案内します。以下の手順に従います：
-
-1. **Select data 画面：**
-   * Views ドロップダウンから `TRUCK_REVIEWS_V` を選択
-   * **Next** をクリック
-
-2. **Select search column 画面：**
-   * `REVIEW` を選択（セマンティック検索が行われるテキストカラム）
-   * **Next** をクリック
-
-3. **Select attributes 画面：**
-   * 結果のフィルタリング用カラムを選択：`TRUCK_BRAND_NAME`、`PRIMARY_CITY`、`REVIEW_ID`
-   * **Next** をクリック
-
-4. **Select columns 画面：**
-   * 検索結果に含める他のカラムを選択：`DATE`、`LANGUAGE` など
-   * **Next** をクリック
-
-5. **Configure indexing 画面：**
-   * **Warehouse**：ドロップダウンから `COMPUTE_WH` を選択
-   * 他のデフォルト設定はそのまま
-   * **Create** をクリックして検索サービスを構築
+1. **Select data 画面：** Views ドロップダウンから `TRUCK_REVIEWS_V` を選択（SQL の `AS (SELECT ...)` に相当）
+2. **Select search column 画面：** `REVIEW` を選択（SQL の `ON REVIEW` に相当）
+3. **Select attributes 画面：** フィルタリング用カラムを選択（SQL の `ATTRIBUTES` に相当）
+4. **Select columns 画面：** 検索結果に含める他のカラムを選択
+5. **Configure indexing 画面：** Warehouse を選択し **Create** をクリック（SQL の `WAREHOUSE` / `TARGET_LAG` に相当）
 
 ![assets/vignette-3/cortex-search-walkthrough.gif](assets/vignette-3/cortex-search-walkthrough.gif)
 
-> **注意**：検索サービスの作成にはインデックスの構築が含まれるため、初期セットアップには少し時間がかかる場合があります。作成プロセスが長引く場合は、事前設定済みの検索サービスを使用してラボを継続できます：
-> 
+**作成済みサービスの確認**
 
-1.  Snowsight の左側メニューから **AI & ML** に移動し、**Cortex Search** をクリックします。
-2.  Cortex Search ビューでドロップダウンフィルター（画像で `TB_101 / HARMONIZED` と表示）を見つけます。このフィルターが `TB_101 / HARMONIZED` に設定されていることを確認します。
-3.  表示される「Search services」リストで、事前構築済みサービス **`TASTY_BYTES_REVIEW_SEARCH`** をクリックします。
-4.  サービスの詳細ページに入ったら、右上の **Playground** をクリックしてラボの検索サービスの使用を開始します。
-
-- **いずれかの検索サービスがアクティブになったら（新しいものでも事前設定済みでも）、クエリは低遅延で実行され、シームレスにスケールされます。**
+Snowsight の左側メニューから **AI & ML** → **Cortex Search** を開き、ドロップダウンフィルターを `TB_101 / HARMONIZED` に設定すると、作成したサービスが一覧に表示されます。
 
 ![assets/vignette-3/cortex-search-existing-service.png](assets/vignette-3/cortex-search-existing-service.png)
 
-> このシンプルな UI の裏では、Cortex Search が複雑なタスクを実行しています。「REVIEW」カラムのテキストを分析し、AI モデルを使ってテキストの意味の数値表現であるセマンティックエンベディングを生成します。これらのエンベディングはインデックス化され、後で高速な概念検索が可能になります。数回クリックするだけで、Snowflake にレビューの意図を理解させることができました。
+</details>
 
-#### ステップ 4 - セマンティッククエリの実行
+> このシンプルな定義の裏では、Cortex Search が複雑なタスクを実行しています。`REVIEW` カラムのテキストを分析し、AI モデルを使ってテキストの意味の数値表現であるセマンティックエンベディングを生成します。これらのエンベディングはインデックス化され、後で高速な概念検索が可能になります。数行の SQL で、Snowflake にレビューの意図を理解させることができました。
 
-サービスが「Active」と表示されたら、**Playground** をクリックして検索バーに自然言語プロンプトを入力します：
+#### 1-3. SQL でテスト
+
+`SNOWFLAKE.CORTEX.SEARCH_PREVIEW` で検索し、`TABLE(FLATTEN(...))['results']` でテーブル形式に展開します。`vignette-4_2.sql` の 1-3 に 2 つのクエリがあります。
+
+* **[1] 基本検索：** `"query": "best tacos ever"` で意味検索
+* **[2] フィルター付き検索：** `"filter": {"@eq": {"PRIMARY_CITY": "Seattle"}}` で都市を絞り込み（`@eq` = 完全一致、`@contains` = 部分一致）
+
+検索結果に `AI_TRANSLATE` を重ねて、英語レビューを日本語で確認できるようにしています。
+
+#### 1-4. UI（Playground）でテスト
+
+SQL で動作を確認したら、次は UI で対話的に検索します。
+
+1.  Snowsight の左側メニューから **AI & ML** → **Cortex Search** を開きます。
+2.  一覧から `TASTY_BYTES_REVIEW_SEARCH` を選択します。
+3.  ステータスが **Active** になっていることを確認します。
+4.  画面右上の **Playground** をクリックします。
+
+![assets/vignette-3/cortex-search-playground.gif](assets/vignette-3/cortex-search-playground.gif)
+
+検索バーに以下のプロンプトを入力して結果を比較します。
 
 **プロンプト - 1：** `Customers getting sick`（体調を崩す顧客）
 
@@ -1485,7 +1629,7 @@ AI を活用したツールは複雑な分析クエリの生成に優れてい�
 
 > **主要インサイト：** Cortex Search は単に顧客を見つけているのではなく、顧客を体調悪くさせる可能性がある「状況」を見つけています。これがリアクティブなキーワード検索とプロアクティブなセマンティック理解の違いです。
 
-別のクエリを試してみましょう：
+別のクエリを試してみましょう。
 
 **プロンプト - 2：** `Angry customers`（怒っている顧客）
 
@@ -1493,391 +1637,435 @@ AI を活用したツールは複雑な分析クエリの生成に優れてい�
 
 > **主要インサイト：** これらの顧客は離反しようとしていますが、「怒っている」とは一度も言っていません。彼らは自分自身の言葉で不満を表現しました。Cortex Search は言語の背後にある感情を理解し、顧客が離れる前にリスクのある顧客を特定して救うのに役立ちます。
 
+**その他のプロンプト例**
+
+| 言語 | プロンプト | 狙い |
+| --- | --- | --- |
+| 英語 | `The food was cold when it arrived` | 提供温度に関する具体的な不満を抽出 |
+| 英語 | `Long waiting time at the truck` | 待ち時間・オペレーション課題を抽出 |
+| 日本語 | `麺が伸びていた` | クロスリンガル検索の確認 |
+| 日本語 | `接客態度が悪い` | クロスリンガル検索の確認 |
+| 日本語 | `値段が高すぎる` | クロスリンガル検索の確認 |
+
+> **日本語で試す意味：** 埋め込みモデルに多言語対応の `arctic-embed-l-v2.0` を指定しているため、**日本語のクエリで英語のレビューがヒットします**（クロスリンガル検索）。翻訳処理を挟まずに多言語のフィードバックを横断検索できる点を確認してください。
+
+**観察のポイント**
+
+* キーワード完全一致ではなく「意味が近い」順に並ぶことを確認する
+* 検索結果のスコアと、元のレビュー本文を見比べる
+* Filters で `PRIMARY_CITY` や `TRUCK_BRAND_NAME` を指定し、1-3 の SQL で書いた `filter` と同じ絞り込みが UI でもできることを確認する
+
 #### まとめ
 
-最終的に、Cortex Search は Tasty Bytes が顧客フィードバックを分析する方法を変革します。カスタマーサービスマネージャーが単にレビューを精査するだけでなく、スケールで顧客の声を真に理解してプロアクティブに行動し、より良い運用上の意思決定を推進して顧客ロイヤルティを高めることができます。
+Cortex Search は Tasty Bytes が顧客フィードバックを分析する方法を変革します。カスタマーサービスマネージャーが単にレビューを精査するだけでなく、スケールで顧客の声を真に理解してプロアクティブに行動し、より良い運用上の意思決定を推進して顧客ロイヤルティを高めることができます。
 
-次のモジュール「Cortex Analyst」では、自然言語を使って構造化データをクエリします。
+次の PART 2 では、構造化データに意味を与えて自然言語でクエリできるようにします。
 
-### オプション：Cortex Analyst
+### PART 2: Semantic View と Cortex Analyst（構造化データへの意味付け）
 
 
 ![./assets/cortex_analyst_header.png](./assets/cortex_analyst_header.png)
 
-#### 概要
+#### 2-1. 座学 — Semantic View と Cortex Analyst とは
 
-Tasty Bytes のビジネスアナリストは、セルフサービス分析を可能にする必要があります。ビジネスチームが自然言語で複雑な質問をして、データアナリストに SQL を書いてもらうことなく即座にインサイトを得られるようにすることです。以前の AI ツールはレビューの検索や複雑なクエリ生成に役立ちましたが、今求められているのは構造化されたビジネスデータから即座にインサイトを引き出す**会話型分析**です。
+> **ここで講師のスライド解説をお聞きください。**
 
-**[Snowflake Cortex Analyst](https://docs.snowflake.com/ja/user-guide/snowflake-cortex/cortex-analyst)** は、ビジネスユーザーが自然言語インタラクションを通じて分析データから直接価値を引き出すことができます。このラボでは、セマンティックモデルの設計、ビジネスデータへの接続、関係性とシノニムの設定、そして自然言語を使った高度なビジネスインテリジェンスクエリの実行を案内します。
+Tasty Bytes のビジネスアナリストは、セルフサービス分析を可能にする必要があります。ビジネスチームが自然言語で複雑な質問をして、データアナリストに SQL を書いてもらうことなく即座にインサイトを得られるようにすることです。PART 1 の Cortex Search はレビュー検索に役立ちましたが、今求められているのは構造化されたビジネスデータから即座にインサイトを引き出す**会話型分析**です。
 
-#### ステップ 1 - セマンティックモデルの設計
+**[Snowflake Cortex Analyst](https://docs.snowflake.com/ja/user-guide/snowflake-cortex/cortex-analyst)** は、自然言語の質問を SQL に変換して実行するエンジンです。その精度を支えるのが **Semantic View** です。
 
-Snowsight で Cortex Analyst に移動し、セマンティックモデルの基盤を設定することから始めましょう。
+Semantic View は物理テーブルの上にビジネス概念を定義するスキーマオブジェクトで、次の役割を持ちます。
+
+| 構成要素 | 役割 |
+| --- | --- |
+| `TABLES` | 分析対象テーブルとエイリアス定義 |
+| `RELATIONSHIPS` | テーブル間の結合条件 |
+| `FACTS` | 集計対象となる行レベルの数値カラム |
+| `DIMENSIONS` | フィルタ・グループ化に使う属性カラム |
+| `METRICS` | よく使う集計の定義（SUM / AVG / COUNT など） |
+| `AI_SQL_GENERATION` | SQL 生成時の挙動を制御するカスタム指示 |
+| `AI_QUESTION_CATEGORIZATION` | 質問の振り分けルール（答えられない質問の扱い） |
+| `AI_VERIFIED_QUERIES` | 質問と正解 SQL のペア（精度向上用の教師データ） |
+
+これにより、複雑なカラム名や結合を隠し、「地域別売上」のようなビジネス表現で問い合わせできるようになります。定義を一元管理するため、BI ツールと AI で同じ指標定義を共有できます。
+
+#### 2-2. SQL で Semantic View を作成
+
+`vignette-4_2.sql` の PART 2 を実行します。
+
+```sql
+CREATE OR REPLACE SEMANTIC VIEW TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS
+    TABLES (
+        ORDERS AS TB_101.SEMANTIC_LAYER.ORDERS_V
+            WITH SYNONYMS = ('注文', '売上', 'sales', 'order data')
+            COMMENT = '注文データ。1行＝1注文明細（ORDER_DETAIL_ID が一意）。',
+        CUSTOMER_LOYALTY AS TB_101.SEMANTIC_LAYER.CUSTOMER_LOYALTY_METRICS_V
+            PRIMARY KEY (CUSTOMER_ID)
+            WITH SYNONYMS = ('顧客ロイヤルティ', '顧客', 'customer')
+            COMMENT = '顧客ロイヤルティ指標。'
+    )
+    RELATIONSHIPS (
+        ORDERS_TO_LOYALTY AS ORDERS(CUSTOMER_ID) REFERENCES CUSTOMER_LOYALTY(CUSTOMER_ID)
+    )
+    -- FACTS / DIMENSIONS / METRICS / AI_* ブロックは vignette-4_2.sql を参照
+    COPY GRANTS;
+```
+
+> **重要：** この `CREATE SEMANTIC VIEW` は 1 文で約 270 行あります。**途中まで選択して実行すると構文エラーになる**ため、文全体を実行してください。
+
+作成後、構成を確認します。
+
+```sql
+DESCRIBE SEMANTIC VIEW TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS;
+```
+
+UI を使わず SQL から直接クエリすることもできます。
+
+```sql
+SELECT * FROM SEMANTIC_VIEW(
+    TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS
+    DIMENSIONS ORDERS.TRUCK_BRAND_NAME
+    METRICS ORDERS.TOTAL_REVENUE, ORDERS.TOTAL_ORDERS
+) ORDER BY TOTAL_REVENUE DESC LIMIT 10;
+```
+
+**この定義で特に重要な 3 点**
+
+1. **日英併記のシノニム** — `WITH SYNONYMS = ('総売上', '売上合計', 'total sales', 'revenue', '売上高')` のように日本語の言い回しを複数登録しているため、日本語で質問しても精度が出ます。
+2. **コメントに実際の値を列挙** — `COMMENT = 'メニューの種類（BBQ, Chinese, ... 全15種）'` のように実値を書くことで、LLM が `MENU_TYPE = 'Ramen'` を正しく生成できます。
+3. **注文明細レベルの罠への対処** — このテーブルは 1 行 = 1 メニューアイテムです。素朴に `COUNT(*)` すると注文件数が過大になるため、`TOTAL_ORDERS AS COUNT(DISTINCT ORDER_ID)` と定義し、`AI_SQL_GENERATION` にも同じ注意を明記しています。
+
+<details>
+<summary><b>参考：UI（セマンティックモデルジェネレーター）から作成する場合の画面イメージ（クリックで展開）</b></summary>
+
+本ハンズオンでは SQL で作成しますが、Snowsight の UI からウィザード形式で作成することもできます。以下は参考イメージです。DDL の各ブロックが UI のどの画面に対応するかを併記しています。
+
+**Cortex Analyst へのアクセス**
 
 1. Snowsight で **AI & ML → Cortex AI → AI Studio** の **Cortex Analyst** に移動します。
 
 ![assets/vignette-3/cortex-analyst-nav.png](assets/vignette-3/cortex-analyst-nav.png)
 
-2. **ロールとウェアハウスの設定：**
-
-    * ロールを `TB_DEV` に変更します。
-    * ウェアハウスを `TB_CORTEX_WH` に設定します。
-
-3. **Create with Copilot** ボタンをクリックします。
-
-4. 次の画面で **Skip** をクリックします。
+2. ロールを `TB_DEV`、ウェアハウスを `TB_CORTEX_WH` に設定します。
+3. **Create with Copilot** ボタンをクリックし、次の画面で **Skip** をクリックします。
 
 ![assets/vignette-3/cortex-analyst-setup.png](assets/vignette-3/cortex-analyst-setup.png)
 
-5.  **Getting Started** ページで以下を設定します：
-
-      * **Name**: `tasty_bytes_business_analytics`
-      * **DATABASE**: `TB_101`
-      * **SCHEMA**: `SEMANTIC_LAYER`
-      * **Next** をクリックします。
+4. **Getting Started** ページで Name / DATABASE / SCHEMA を設定します（DDL のオブジェクト名に相当）。
 
 ![assets/vignette-3/cortex-analyst-getting-started.png](assets/vignette-3/cortex-analyst-getting-started.png)
 
-#### ステップ 2 - テーブルとカラムの選択と設定
+**テーブルとカラムの選択**（DDL の `TABLES` に相当）
 
-**Select tables** ステップで、分析ビューを選択しましょう。
+**Select tables** ステップで `Customer_Loyalty_Metrics_v` と `Orders_v` を選択します。
 
-1.  コアビジネステーブルを選択：
+![assets/vignette-3/cortex-analyst-select-tables.png](assets/vignette-3/cortex-analyst-select-tables.png)
 
-      * **DATABASE**: `TB_101`
-      * **SCHEMA**: `SEMANTIC_LAYER`
-      * **VIEWS**: `Customer_Loyalty_Metrics_v` と `Orders_v` を選択
-      * **Next** をクリックします。
+**Select columns** ページで、両方の選択済みテーブルがアクティブになっていることを確認し、**Create and Save** をクリックします。
 
-2.  **Select columns** ページで、両方の選択済みテーブルがアクティブになっていることを確認し、**Create and Save** をクリックします。
+![assets/vignette-3/cortex-analyst-select-columns.png](assets/vignette-3/cortex-analyst-select-columns.png)
 
-#### ステップ 3 - 論理テーブルの編集とシノニムの追加
+**シノニムと主キーの追加**（DDL の `WITH SYNONYMS` / `PRIMARY KEY` に相当）
 
-テーブルシノニムと主キーを追加して、自然言語の理解を向上させましょう。
+論理テーブルごとにシノニムを入力し、主キーを設定します。
 
-1.  `customer_loyalty_metrics_v` テーブルで、以下のシノニムを `Synonyms` ボックスにコピーして貼り付けます：
+![assets/vignette-3/cortex-analyst-synonyms.gif](assets/vignette-3/cortex-analyst-synonyms.gif)
 
-    ```
-    Customers, customer_data, loyalty, customer_metrics, customer_info
-    ```
+**リレーションシップの設定**（DDL の `RELATIONSHIPS` に相当）
 
-2.  **Primary Key** をドロップダウンから `customer_id` に設定します。
-
-3.  `orders_v` テーブルには以下のシノニムをコピーして貼り付けます：
-
-    ```
-    Orders, transactions, sales, purchases, order_data
-    ```
-
-4.  変更後、右上の **Save** をクリックします。
-
-#### ステップ 4 - テーブルリレーションシップの設定
-
-セマンティックモデルを作成した後、論理テーブル間のリレーションシップを確立しましょう。
-
-1.  左側のナビゲーションで **Relationships** をクリックします。
-
-2.  **Add relationship** をクリックします。
-
-3.  リレーションシップを以下のように設定します：
-
-      * **Relationship name**: `orders_to_customer_loyalty_metrics`
-      * **Left table**: `ORDERS_V`
-      * **Right table**: `CUSTOMER_LOYALTY_METRICS_V`
-      * **Join columns**: `CUSTOMER_ID` = `CUSTOMER_ID` に設定。
-
-4.  **Add relationship** をクリックします。
+左側ナビゲーションの **Relationships** から **Add relationship** をクリックし、`ORDERS_V` と `CUSTOMER_LOYALTY_METRICS_V` を `CUSTOMER_ID` で結合します。
 
 ![assets/vignette-3/cortex-analyst-table-relationship.png](assets/vignette-3/cortex-analyst-table-relationship.png)
 
-**完了後**、UI 上部の **Save** オプションを使用してください。これにより、セマンティックビューが完成し、セマンティックモデルが高度な自然言語クエリに対応できるようになります。
+> **SQL で作る利点：** UI ウィザードは手軽ですが、`AI_SQL_GENERATION` / `AI_QUESTION_CATEGORIZATION` / `AI_VERIFIED_QUERIES` のような高度な制御や、Git でのバージョン管理、複数アカウントへの再現配布は DDL の方が容易です。
 
-**Cortex Analyst のチャットインターフェース**にフルスクリーンモードでアクセスするには：
+</details>
 
-1.  右上の「Share」ボタン横の **3 点メニュー（省略記号）** をクリックします。
-2.  ドロップダウンメニューから **「Enter fullscreen mode」** を選択します。
+#### 2-3. UI（Cortex Analyst）でテスト
+
+作成した Semantic View に対して、自然言語で質問します。
+
+1.  Snowsight の左側メニューから **AI & ML** → **Cortex Analyst** を開きます。
+2.  セマンティックビューの一覧から `TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS` を選択します。
+3.  ロールを `TB_DATA_ENGINEER`、ウェアハウスを `TB_CORTEX_WH` に設定します。
+
+チャットインターフェースをフルスクリーンで使う場合は、右上の **3 点メニュー（省略記号）** から **Enter fullscreen mode** を選択します。
 
 ![assets/vignette-3/cortex-analyst-interface.png](assets/vignette-3/cortex-analyst-interface.png)
 
-#### ステップ 5 - 顧客セグメンテーションインテリジェンスの実行
+**プロンプト例 A — 基本（`AI_VERIFIED_QUERIES` に登録済み）**
 
-セマンティックモデルとリレーションシップがアクティブになったので、最初の複雑なビジネスクエリを実行して高度な自然言語分析を実証しましょう。
+検証済みクエリとして登録してあるため、安定して正しい SQL が返ります。UI にオンボーディング質問として候補表示される場合もあります。
 
-1.  Cortex Analyst クエリインターフェースに移動します。
+```
+売上上位のトラックブランドは？
+年別の売上推移は？
+注文件数が多い都市トップ10は？
+ロイヤルティ会員の居住国別の平均 LTV は？
+```
 
-2.  以下のプロンプトを入力します：
+**プロンプト例 B — 応用**
 
-    ```
-    Show customer groups by marital status and gender, with their total spending per customer and average order value. Break this down by city and region, and also include the year of the orders so I can see when the spending occurred. In addition to the yearly breakdown, calculate each group's total lifetime spending and their average order value across all years. Rank the groups to highlight which demographics spend the most per year and which spend the most overall.
-    ```
+検証済みクエリに無い質問でも、`DIMENSIONS` / `METRICS` の定義とシノニムから正しい SQL が生成されることを確認します。
+
+```
+メニュータイプ別の総売上を教えて
+フランチャイズと直営で客単価に差はある？
+東京で一番売れているメニューは何？
+2022年の月別売上トレンドを教えて
+顧客1人あたりの売上が高い都市トップ5は？
+```
+
+**プロンプト例 C — 複雑な分析**
+
+マルチテーブル結合、人口統計セグメンテーション、地理的インサイト、生涯価値分析を組み合わせた質問も可能です。
+
+```
+Show customer groups by marital status and gender, with their total spending per customer and average order value. Break this down by city and region, and also include the year of the orders so I can see when the spending occurred. In addition to the yearly breakdown, calculate each group's total lifetime spending and their average order value across all years. Rank the groups to highlight which demographics spend the most per year and which spend the most overall.
+```
+
 ![assets/vignette-3/cortex-analyst-prompt1.png](assets/vignette-3/cortex-analyst-prompt1.png)
 
-> **主要インサイト：** マルチテーブル結合、人口統計セグメンテーション、地理的インサイト、生涯価値分析を組み合わせた包括的なインテリジェンスを即座に提供します。通常 40 行以上の SQL と数時間のアナリスト作業を必要とするインサイトです。
+> **主要インサイト：** 通常 40 行以上の SQL と数時間のアナリスト作業を必要とするインサイトを即座に提供します。
 
-#### ステップ 6 - 高度なビジネスインテリジェンスの生成
+更新アイコンでコンテキストをクリアしてから、次の質問を試します。
 
-基本的なセグメンテーションを見た後、会話型ビジネスインテリジェンスの完全な力を示すエンタープライズグレードの SQL を実証しましょう。
+```
+I want to understand our customer base better. Can you group customers by their total spending (high, medium, low spenders), then show me their ordering patterns differ? Also compare how our franchise locations perform versus company-owned stores for each spending group.
+```
 
-1.  更新アイコンをクリックしてコンテキストをクリアします。
-
-2.  以下のプロンプトを入力します：
-
-    ```
-    I want to understand our customer base better. Can you group customers by their total spending (high, medium, low spenders), then show me their ordering patterns differ? Also compare how our franchise locations perform versus company-owned stores for each spending group.
-    ```
 ![assets/vignette-3/cortex-analyst-prompt2.png](assets/vignette-3/cortex-analyst-prompt2.png)
 
+> **主要インサイト：** Cortex Analyst がシンプルな自然言語の質問と、それに答えるために必要な高度で多面的な SQL クエリとの間のギャップをシームレスに埋める様子に注目してください。CTE、ウィンドウ関数、詳細な集計を含む複雑なロジックを自動的に構築します。
 
-> **主要インサイト：** Cortex Analyst がビジネスユーザーのシンプルな自然言語の質問と、それに答えるために必要な高度で多面的な SQL クエリとの間のギャップをシームレスに埋める様子に注目してください。CTE、ウィンドウ関数、詳細な集計を含む複雑なロジックを自動的に構築し、通常は熟練したデータアナリストが必要な作業です。
+**プロンプト例 D — ガードレールの確認（★重要★）**
+
+`AI_QUESTION_CATEGORIZATION` に書いたルールが効くかを確認します。**「答えられないことを正しく答える」のも重要な品質**です。
+
+| プロンプト | 期待される挙動 |
+| --- | --- |
+| `2024年の売上を教えて` | データは 2019年1月〜2022年11月 のみ。空の結果ではなく「データが含まれていません」と明示的に返る |
+| `顧客の氏名と電話番号を一覧で出して` | 個人情報に関する質問として拒否される |
+| `評判の良いトラックはどこ？` | レビュー検索が必要な質問として「Cortex Search を使ってください」と案内される |
+
+> **なぜ重要か：** データ範囲外の年を聞かれたとき、ガードレールが無いと空の結果が返ります。空の結果は「売上ゼロ」と誤読されるため、明示的な拒否に変えています。
+
+**観察のポイント**
+
+* 回答と一緒に生成された SQL を必ず開いて確認する
+* 注文件数を聞いたとき `COUNT(DISTINCT ORDER_ID)` が使われているか（単純な `COUNT` では明細件数になり過大になる）
+* 曖昧な質問にどう解釈が補われたかを確認する
 
 #### まとめ
 
-これらの厳格なステップを通じて、堅牢な Cortex Analyst セマンティックモデルを構築しました。これは単なる改善ではなく、さまざまな業界のユーザーを SQL の制約から解放し、直感的な自然言語クエリを通じて深いビジネスインテリジェンスを引き出すことができる変革的なツールです。Tasty Bytes のユースケースで示したマルチレイヤー分析は、このモデルが深いインサイトに従来必要だった時間と労力を大幅に削減し、データへのアクセスを民主化し、広範なスケールでデータに基づいた機敏な意思決定の文化を育む方法を強力に示しています。
+Semantic View を DDL で定義することで、ビジネス指標をコードとして管理しながら、自然言語での分析を可能にしました。これは単なる改善ではなく、さまざまな業界のユーザーを SQL の制約から解放し、直感的な自然言語クエリを通じて深いビジネスインテリジェンスを引き出すことができる変革的なツールです。
 
-### Snowflake Intelligence
+次の PART 3 では、PART 1 の Cortex Search と PART 2 の Semantic View を 1 つのエージェントに束ねます。
+
+### PART 3: Cortex Agent と Snowflake CoWork
 
 
 ![./assets/si_header.png](./assets/si_header.png)
 
-#### 概要
+#### 3-1. 座学 — Cortex Agent と Snowflake CoWork とは
 
-Tasty Bytes の最高執行責任者（COO）は毎週、断片化した多数のレポートを受け取っています。顧客満足度ダッシュボード、収益分析、運用パフォーマンス指標、市場分析など。重要なビジネスインサイトは別々のシステムに埋もれています。顧客センチメントはレビュープラットフォームに、売上データは財務ダッシュボードに、運用指標は孤立したパフォーマンスツールに存在しています。
+> **ここで講師のスライド解説をお聞きください。**
+
+Tasty Bytes の最高執行責任者（COO）は毎週、断片化した多数のレポートを受け取っています。顧客満足度ダッシュボード、収益分析、運用パフォーマンス指標、市場分析など。重要なビジネスインサイトは別々のシステムに埋もれています。顧客センチメントはレビュープラットフォームに、売上データは財務ダッシュボードに存在しています。
 
 COO が Q3 の収益低下の原因を理解する必要がある場合、顧客フィードバックのセンチメントと実際の財務パフォーマンスを結びつけるには、手動分析、SQL の専門知識、複数のデータソースの相互参照に何時間もかかります。これはエグゼクティブや非技術的な役割にとって大きな障壁です。
 
-このセクションでは、**[Snowflake Intelligence](https://docs.snowflake.com/ja/user-guide/snowflake-cortex/snowflake-intelligence)** がこの課題に取り組む方法を示します。セットアップで利用可能になる Cortex Search と Cortex Analyst の機能を組み合わせ、単一の会話型 AI エージェントを実現します。エグゼクティブや非技術的な役割が自然言語で質問して、可視化付きの即時回答を受け取る方法を見ていきます。このようなインサイトは通常、複数のチームにまたがるアナリストの数週間の作業を必要とします。
+**Cortex Agent** は、PART 1 と PART 2 で作ったものを**ツール**として登録し、質問に応じて自律的に使い分けます。
 
-**前提条件：**
+| ツール | 種類 | 得意な質問 |
+| --- | --- | --- |
+| `tasty_bytes_review_search` | `cortex_search` | 「どんな不満がある？」（非構造化・レビュー） |
+| `tasty_bytes_business_analytics` | `cortex_analyst_text_to_sql` | 「売上はいくら？」（構造化・数値） |
 
-このモジュールを開始する前に、環境には Snowflake Intelligence を動かす事前設定済みの AI サービスが含まれています：
+エージェントの価値は**2 つを横断する質問**に答えられる点です。「売上が低い都市で、顧客は何に不満を持っているか？」という質問に対し、エージェントは Analyst で売上下位都市を特定し、その結果を使って Search でレビューを検索し、両者を統合して回答します。
 
-* **Cortex Search サービス：** `tasty_bytes_review_search` - 顧客レビューとフィードバックを分析
-    * *上級ユーザー向け注記：* Cortex Search をゼロから構築したい場合は、オプションのセットアップモジュールがあります。詳細ガイドは[Cortex Search モジュール](/en/developers/guides/zero-to-snowflake/)のリンクをクリックしてください。
+**[Snowflake CoWork](https://docs.snowflake.com/ja/user-guide/snowflake-cortex/snowflake-intelligence)**（旧 Snowflake Intelligence）は、このエージェントと対話するためのチャット UI です。
 
-* **Cortex Analyst サービス：** `TASTY_BYTES_BUSINESS_ANALYTICS` - 自然言語の質問を SQL に変換し、構造化データからインサイトを提供してセルフサービス分析を可能にします。
-    * *上級ユーザー向け注記：* Cortex Analyst セマンティックモデルをゼロから構築したい場合は、詳細なセットアップモジュールにアクセスできます。[Cortex Analyst モジュール](/en/developers/guides/zero-to-snowflake/)をクリックしてください。
+#### 3-2. SQL で Cortex Agent を作成
 
----
+`vignette-4_2.sql` の PART 3 を実行します。エージェントは `CREATE AGENT ... FROM SPECIFICATION` で、仕様を JSON で定義します。
 
-#### ステップ 1 - セマンティックモデルのアップロード
-
-Snowflake Intelligence でビジネス分析機能を有効にするには、事前構築済みのセマンティックモデルファイルを Snowflake ステージにアップロードする必要があります。**このリンクをクリックして必要な YAML ファイルを直接ダウンロードできます：** [Cortex Analyst セマンティックモデル](https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA/blob/main/scripts/TASTY_BYTES_BUSINESS_ANALYTICS.yaml)
-
-**重要：** リンクをクリックするとブラウザでファイルが開く場合は、リンクを右クリックして **「名前を付けてリンク先を保存」** を選択し、YAML ファイルをローカルマシンにダウンロードしてください。
-
-セマンティックモデルのアップロード方法：
-
-1.  **Cortex Analyst に移動**：Snowsight で **AI & ML → Cortex AI → AI Studio** に移動し、**Cortex Analyst** を選択します。
-
-2.  **ロールとウェアハウスの設定**：
-
-      * ロールを `TB_DEV` に変更します。
-      * ウェアハウスを `TB_CORTEX_WH` に設定します。
-
-3.  **YAML ファイルのアップロード**：**Upload your yaml file** ボタンをクリックします。
-
-4.  **アップロード詳細の設定**：ファイルアップロード画面で以下を設定します：
-
-      * **Database**: `Tb_101`
-      * **Schema**: `semantic_layer`
-      * **Stage**: `semantic_model_stage`
-
-5.  **Upload をクリック**：この YAML ファイルには、顧客ロイヤルティ指標と注文データを含むビジネス分析レイヤーを定義する事前設定済みセマンティックモデルが含まれています。
-
-6.  **YAML ファイルを保存**：アップロードをクリックした後、YAML ファイルを保存します。セマンティックモデルは Cortex Analyst パネルのセマンティックモデルセクションに表示されます。
-
-![snowflake-intelligence-yaml-file-upload](assets/vignette-3/snowflake-intelligence-yaml-file-upload.gif)
-
------
-
-#### ステップ 2：統合エージェントの作成
-
-AI サービスが事前設定されたので、これらの機能を単一の統合インテリジェンスインターフェースに組み合わせる Cortex エージェントを作成できます。
-
-### エージェントの作成
-
-1.  **Snowsight** で **AI & ML Studio** に移動し、**Agents** を選択します。
-2.  **Create Agent** をクリックします。
-3.  「Create New Agent」ウィンドウで **Create agent** をクリックします。
-4.  **初期設定**：
-      * **Platform integration**：「Create this agent for Snowflake Intelligence」にチェックが入っていることを確認します。
-      * **Database and schema**：デフォルトで `SNOWFLAKE_INTELLIGENCE.AGENTS` になります。
-      * **Agent object name**：`tasty_bytes_intelligence_agent` と入力します。
-      * **Display name**：`Tasty Bytes Business Intelligence Agent` と入力します。
-5.  **Create agent** をクリックします。
-
-![snowflake-intelligence-create-agent](assets/vignette-3/snowflake-intelligence-create-agent.png)
-
------
-
-### エージェントの設定
-
-エージェントを作成した後、エージェントリストから名前をクリックして詳細ページを開き、**Edit** をクリックして設定を開始します。
-
-![snowflake-intelligence-edit-agent](assets/vignette-3/snowflake-intelligence-edit-agent.gif)
-
-#### **1. About タブ**
-
-  * **Display name**: `Tasty Bytes Business Intelligence Agent`
-  * **Description**:
-```
-This agent analyzes customer feedback and business performance data for Tasty Bytes food trucks. It identifies operational issues, competitive threats, and growth opportunities by connecting customer reviews with revenue and loyalty metrics to provide actionable business insights.
+```sql
+CREATE OR REPLACE AGENT SNOWFLAKE_INTELLIGENCE.AGENTS.TASTY_BYTES_INTELLIGENCE_AGENT
+WITH PROFILE='{"display_name":"Tasty Bytes Business Intelligence Agent"}'
+COMMENT = 'Tasty Bytes の顧客フィードバックと業績データを統合分析するエージェント'
+FROM SPECIFICATION $$
+{
+  "models": { "orchestration": "auto" },
+  "instructions": {
+    "response": "あなたは Tasty Bytes のビジネスインテリジェンスアナリストです。...",
+    "orchestration": "売上・注文・顧客数などの数値は tasty_bytes_business_analytics を使う。レビュー・感情・不満などは tasty_bytes_review_search を使う。両方必要な質問では両方使う。",
+    "sample_questions": [ ... ]
+  },
+  "tools": [
+    { "tool_spec": { "type": "cortex_analyst_text_to_sql", "name": "tasty_bytes_business_analytics" } },
+    { "tool_spec": { "type": "cortex_search",             "name": "tasty_bytes_review_search" } }
+  ],
+  "tool_resources": {
+    "tasty_bytes_business_analytics": {
+      "semantic_view": "TB_101.SEMANTIC_LAYER.TASTY_BYTES_BUSINESS_ANALYTICS",
+      "execution_environment": { "type": "warehouse", "warehouse": "TB_CORTEX_WH", "query_timeout": 300 }
+    },
+    "tasty_bytes_review_search": {
+      "name": "TB_101.HARMONIZED.TASTY_BYTES_REVIEW_SEARCH",
+      "id_column": "REVIEW_ID", "title_column": "TRUCK_BRAND_NAME", "max_results": 10
+    }
+  }
+}
+$$;
 ```
 
-#### **2. Tools タブ**
+| 設定 | 役割 |
+| --- | --- |
+| `instructions.response` | 回答のトーン・形式（日本語で答える、金額を明示する等） |
+| `instructions.orchestration` | **どのツールをいつ使うか**の判断基準。エージェント精度の要 |
+| `instructions.sample_questions` | UI に表示される質問候補 |
+| `tools` | 使えるツールの宣言 |
+| `tool_resources` | 各ツールが参照する実オブジェクト |
 
-> **注意**：このラボでは主にステップ 1 でアップロードした事前構築済みの**セマンティックモデル**を使用します。ただし、[Cortex Analyst モジュール](vignette-3-cortex-analyst.md)を使ってゼロから Cortex Analyst セマンティックビューを構築した場合は、セマンティックモデルの代わりにここで**セマンティックビュー**を選択します。**Database** を `TB_101`、**Schema** を `semantic_layer` に設定すると、そのスキーマの下にセマンティックビューが表示されます。
+作成後、権限を付与します。
 
-ステップ 1 でアップロードしたセマンティックモデルを追加しましょう：
-
-**Cortex Analyst ツールの追加：**
-
-1.  「Cortex Analyst」の横にある **Add** をクリックします。
-2.  **Semantic model file** ラジオボタンを選択します。
-3.  **セマンティックモデルの場所を設定**：
-      * **Schema**：`TB_101.SEMANTIC_LAYER` を選択します。
-      * **Stage**：`SEMANTIC_MODEL_STAGE` を選択します。
-      * **File Selection**：リストからアップロードした YAML ファイルを選びます。
-4.  **ツールの詳細を設定**：
-      * **Name**：`tasty_bytes_business_analytics` と入力します。
-      * **Description**:
-```
-Searches customer reviews and feedback to identify sentiment, operational issues, and customer satisfaction insights
-```
-5.  **実行設定**：
-      * **Warehouse**：**Custom** を選択して `TB_CORTEX_WH` を選びます。
-      * **Query timeout**：`300` と入力します。
-6.  **Add** をクリックします。
-
-![snowflake-intelligence-add-analyst](assets/vignette-3/snowflake-intelligence-add-analyst.gif)
-
------
-
-**Cortex Search Services ツールの追加：**
-
-1.  「Cortex Search Services」の横にある **Add** をクリックします。
-2.  **ツールの詳細を設定**：
-      * **Name**：`tasty_bytes_review_search`
-      * **Description**：
-``` 
-Searches customer reviews and feedback to identify sentiment, operational issues, and customer satisfaction insights
-``` 
-3.  **データソースの場所を設定**：
-      * **Schema**：`TB_101.HARMONIZED` を選択します。
-      * **Search service**：`TB_101.HARMONIZED.TASTY_BYTES_REVIEW_SEARCH` を選択します。
-4.  **検索結果カラムを設定**：
-      * **ID column**：**Review** を選択します。
-      * **Title column**：**TRUCK_BRAND_NAME** を選択します。
-5.  **検索フィルターの設定（オプション）**：
-      * **Add filter** をクリックして最大 5 つのオプションフィルターを追加します。
-6.  **Add** をクリックします。
-
-![snowflake-intelligence-add-search](assets/vignette-3/snowflake-intelligence-add-search.gif)
-
-#### **3. Orchestration タブ**
-
-* **Orchestration Instruction**：
-
-```
-Use both Cortex Search and Cortex Analyst to provide unified business intelligence.
-Analyze customer feedback sentiment and operational issues from reviews, then correlate findings with revenue performance, customer loyalty metrics, and market data.
-Present insights with revenue quantification and strategic recommendations.
+```sql
+GRANT USAGE ON AGENT SNOWFLAKE_INTELLIGENCE.AGENTS.TASTY_BYTES_INTELLIGENCE_AGENT
+  TO ROLE TB_DATA_ENGINEER;
 ```
 
-* **Response Instruction**:
-```
-You are a business intelligence analyst for Tasty Bytes food trucks. When analyzing data:
-1. Combine customer review insights with specific revenue and loyalty data to provide comprehensive business intelligence
-2. Quantify business impact with specific revenue amounts and market sizes
-3. Identify operational risks, competitive threats, and growth opportunities
-4. Provide clear, actionable recommendations for executive decision-making
-5. Use visualizations when helpful to illustrate business insights
-6. Explain the correlation between customer feedback and business performance
-7. Focus on strategic insights that drive business outcomes
-```
-
-#### **4. Access タブ**
-
-> このラボでエージェントを使用できるユーザーを制御するには、テスト用に十分なデフォルトの ACCOUNTADMIN アクセスをそのまま維持します。追加設定は不要です。ただし、**Add role** をクリックして TB_ADMIN などのロールを追加することもできます。
-
-#### **5. 設定の保存**
-
-  * 右上の **Save** をクリックしてエージェントの設定を完了します。
-
-統合インテリジェンスエージェントが、Snowflake Intelligence インターフェースを通じた会話型ビジネスインテリジェンスの提供に対応できるようになりました。
-
-> **注意：** エージェントを Snowflake Intelligence に追加しようとした際に以下のエラーが表示された場合は、次の手順を実行してください。
-> `You do not have MODIFY privilege to add agents to Snowflake Intelligence. Contact your administrator to grant you the necessary privileges.`
+> **`Object does not exist` エラーが出た場合：** `SNOWFLAKE_INTELLIGENCE.AGENTS` スキーマが存在しない可能性があります。`ACCOUNTADMIN` で以下を実行してください。
 >
-> **Snowflake Intelligence にエージェントを追加する手順**
+> ```sql
+> CREATE DATABASE IF NOT EXISTS SNOWFLAKE_INTELLIGENCE;
+> CREATE SCHEMA   IF NOT EXISTS SNOWFLAKE_INTELLIGENCE.AGENTS;
+> ```
+
+> **CoWork にエージェントが表示されない場合：** `MODIFY privilege` エラーが出るときは、`ACCOUNTADMIN` で以下を実行します。
 >
-> **前提条件：** `ACCOUNTADMIN` ロールで実行すること
->
-> Snowsight の **Cortex Code** を開き、以下の SQL を実行します。
->
-> **1. Snowflake Intelligence オブジェクトの作成：**
 > ```sql
 > CREATE SNOWFLAKE INTELLIGENCE SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT;
-> ```
 >
-> **2. エージェントの追加：**
-> ```sql
 > ALTER SNOWFLAKE INTELLIGENCE SNOWFLAKE_INTELLIGENCE_OBJECT_DEFAULT
 >   ADD AGENT SNOWFLAKE_INTELLIGENCE.AGENTS.TASTY_BYTES_INTELLIGENCE_AGENT;
 > ```
 
------
+<details>
+<summary><b>参考：UI からエージェントを作成する場合の画面イメージ（クリックで展開）</b></summary>
 
-#### ステップ 3 - Snowflake Intelligence インターフェースへのアクセス
+本ハンズオンでは SQL で作成しますが、Snowsight の UI からも同じエージェントを作成できます。JSON 仕様の各キーが UI のどのタブに対応するかを併記しています。
 
-インテリジェンスエージェントが作成されたので、統合された自然言語ビジネスインテリジェンスを提供する Snowflake Intelligence インターフェースにアクセスできます。
+**エージェントの作成**
 
-**インターフェースへのアクセス：**
+1.  **Snowsight** で **AI & ML Studio** に移動し、**Agents** を選択します。
+2.  **Create Agent** をクリックします。
+3.  **Platform integration**：「Create this agent for Snowflake Intelligence」にチェックが入っていることを確認します。
+4.  **Database and schema**：デフォルトで `SNOWFLAKE_INTELLIGENCE.AGENTS` になります。
+5.  **Agent object name** と **Display name** を入力し **Create agent** をクリックします。
 
-1.  Snowsight を開き、AI & ML Studio に移動して **Snowflake Intelligence** を選択します。
-2.  作成したエージェントを選択：`tasty_bytes_intelligence_agent`
-3.  ソースを選択：`tasty_bytes_review_search` と `tasty_bytes_business_analytics` を選択します。
+![snowflake-intelligence-create-agent](assets/vignette-3/snowflake-intelligence-create-agent.png)
 
-統合ビジネスインテリジェンスを自然言語でデモする準備ができました。
+**エージェントの設定**
+
+エージェントリストから名前をクリックして詳細ページを開き、**Edit** をクリックします。
+
+![snowflake-intelligence-edit-agent](assets/vignette-3/snowflake-intelligence-edit-agent.gif)
+
+**1. About タブ**（JSON の `PROFILE` / `COMMENT` に相当）
+
+Display name と Description を設定します。
+
+**2. Tools タブ**（JSON の `tools` / `tool_resources` に相当）
+
+*Cortex Analyst ツールの追加：* 「Cortex Analyst」の横の **Add** をクリックし、**Semantic view** を選択して `TB_101.SEMANTIC_LAYER` の `TASTY_BYTES_BUSINESS_ANALYTICS` を指定します。Warehouse に `TB_CORTEX_WH`、Query timeout に `300` を設定します。
+
+![snowflake-intelligence-add-analyst](assets/vignette-3/snowflake-intelligence-add-analyst.gif)
+
+*Cortex Search Services ツールの追加：* 「Cortex Search Services」の横の **Add** をクリックし、Schema に `TB_101.HARMONIZED`、Search service に `TASTY_BYTES_REVIEW_SEARCH` を指定します。ID column に `REVIEW_ID`、Title column に `TRUCK_BRAND_NAME` を設定します。
+
+![snowflake-intelligence-add-search](assets/vignette-3/snowflake-intelligence-add-search.gif)
+
+**3. Orchestration タブ**（JSON の `instructions.orchestration` / `instructions.response` に相当）
+
+**4. Access タブ**（SQL の `GRANT USAGE ON AGENT` に相当）
+
+**Add role** をクリックして `TB_DATA_ENGINEER` などのロールを追加します。
+
+**5. 設定の保存** — 右上の **Save** をクリックします。
+
+**参考：YAML セマンティックモデルファイルを使う場合**
+
+本ハンズオンでは PART 2 で作成した Semantic View（スキーマオブジェクト）を使いますが、YAML ファイルをステージに置いて参照する方式もあります。その場合は Cortex Analyst 画面の **Upload your yaml file** から `TB_101.SEMANTIC_LAYER.SEMANTIC_MODEL_STAGE` にアップロードします。
+
+![snowflake-intelligence-yaml-file-upload](assets/vignette-3/snowflake-intelligence-yaml-file-upload.gif)
+
+> **Semantic View と YAML ファイルの違い：** Semantic View は DDL で管理できるスキーマオブジェクトで、権限管理・バージョン管理が容易です。YAML ファイル方式は旧来の方法で、ステージ上のファイルとして管理します。本ハンズオンでは Semantic View を使います。
+
+</details>
+
+#### 3-3. UI（Snowflake CoWork）でテスト
+
+1.  Snowsight の左側メニューから **AI & ML** → **Snowflake Intelligence**（または **CoWork**）を開きます。
+2.  エージェント選択で `Tasty Bytes Business Intelligence Agent` を選びます。
+3.  ロールが `TB_DATA_ENGINEER`（または `ACCOUNTADMIN`）になっていることを確認します。
 
 ![snowflake-intelligence-interface](assets/vignette-3/snowflake-intelligence-interface.gif)
------
 
-#### ステップ 4 - 収益と顧客テーマの相関分析
+**プロンプト例 A — 単一ツールで回答できる質問**
 
-最も収益の高い市場を深掘りして、財務的な成功と顧客の声をマッピングしましょう。
+まずエージェントが**正しくツールを選べるか**を確認します。
 
-**プロンプト：**
+| プロンプト | 期待されるツール |
+| --- | --- |
+| `売上上位のトラックブランドを教えて` | Analyst のみ |
+| `メニュータイプ別の売上を教えて` | Analyst のみ |
+| `顧客はどんな不満を持っている？` | Search のみ |
+| `食べ物が冷たかったというレビューを探して` | Search のみ |
+| `接客に関する良い評価を見せて` | Search のみ |
 
-```
-Generate a bar chart displaying the top 5 cities by total revenue. For each of these top-performing cities, analyze their customer reviews to identify the 3 most frequently discussed topics or common themes (e.g., related to service, product, or facilities). Provide these topics alongside the chart
-```
-![snowflake-intelligence-prompt2](assets/vignette-3/snowflake-intelligence-prompt1.png)
-
-**主要インサイト：** この分析は Snowflake Intelligence の力を示しています！トップ都市の収益と、それらの都市の顧客が実際に言っていることをつなぎ合わせるのに役立ちます。収益でベストパフォーマンスの市場を素早く確認し、レビューで最も一般的なトピックの明確な全体像を得ることができます。これにより、成功を真に推進しているもの、あるいは強い地域でも潜在的な問題が醸成されていないかについて、より豊かで人間的な理解が得られます。すべては単純な質問をするだけで、これらの強力なインサイトが得られます。
-
-#### ステップ 5 - 低パフォーマンス市場の分析
-
-これらの重要な顧客の悩みポイントに対処し、これらの都市のパフォーマンスを改善するための的を絞ったアクションプランを作成する戦略を探りましょう。
-
-**プロンプト：**
+**プロンプト例 B — 2 つのツールを組み合わせる質問（★エージェントの真価★）**
 
 ```
-Identify the 5 cities with the lowest total revenue. For each of these cities, analyze their customer reviews to identify the 3 most frequently mentioned pain points or areas of dissatisfaction. Please present this as a table, showing the city, its total revenue, and the identified customer pain points.
+売上上位5都市を棒グラフで出して、それぞれの都市のレビューでよく話題になっている
+トピックを3つずつ挙げてください
 ```
+
+![snowflake-intelligence-prompt1](assets/vignette-3/snowflake-intelligence-prompt1.png)
+
+> **主要インサイト：** トップ都市の収益と、それらの都市の顧客が実際に言っていることをつなぎ合わせます。成功を真に推進しているもの、あるいは強い地域でも潜在的な問題が醸成されていないかについて、より豊かな理解が得られます。
+
+```
+売上が最も低い5都市を特定し、それぞれの都市のレビューから顧客の不満点を
+3つずつ抽出して、都市・売上・不満点の表にしてください
+```
+
 ![snowflake-intelligence-prompt2](assets/vignette-3/snowflake-intelligence-prompt2.png)
 
-**主要インサイト：** Snowflake Intelligence からのこの分析は、最も収益の低い都市の明確な全体像を提供し、それらを阻んでいる正確な顧客の悩みポイントに光を当てます。生の収益数字と顧客レビューからの具体的なフィードバックを直接結びつけることで、サービス、製品、サポートを改善するために集中すべき場所を特定できます。これらの課題を抱える市場での成長と顧客満足を促進するための実行可能なインテリジェンスを提供し、すべて自然言語での質問によって実現されます。
+> **主要インサイト：** 生の収益数字と顧客レビューからの具体的なフィードバックを直接結びつけることで、サービス、製品、サポートを改善するために集中すべき場所を特定できます。
 
------
+さらに踏み込んだ質問例です。
+
+```
+評価の低いレビューが多いトラックブランドの売上はどうなっている？
+ラーメンのレビュー評価と売上に相関はある？
+シアトルの顧客満足度と売上を他都市と比較して、改善提案をください
+```
+
+**観察のポイント**
+
+* エージェントが**どのツールを使ったか**を回答の下部（ツール実行ログ）で確認する
+* 組み合わせ質問では **Analyst → Search の順で 2 回ツールを呼んでいる**ことを確認する
+* Analyst が生成した SQL を展開して、PART 2 で定義したメトリクスが使われているか確認する
+* グラフ生成を依頼したときに可視化が返ることを確認する
 
 #### まとめ
 
-Tasty Bytes で経験したことは、ビジネスがデータを真に理解できる方法の根本的な変化を示しています。構造化されたビジネス指標からの会話型インサイトのために Cortex Analyst と統合しながら、非構造化顧客フィードバックへの詳細な調査のために Snowflake Cortex Search をシームレスに統合することで、真に統合されたビジネスインテリジェンスを実現しました。
+Tasty Bytes で経験したことは、ビジネスがデータを真に理解できる方法の根本的な変化を示しています。非構造化顧客フィードバックへの Cortex Search と、構造化ビジネス指標への Cortex Analyst を 1 つのエージェントに統合することで、真に統合されたビジネスインテリジェンスを実現しました。
 
-すべての技術レベルのユーザーが自然言語で質問して、視覚的に豊かで実行可能な回答を即座に受け取れるようになったことを目の当たりにしました。このデータへの直接的で直感的なアクセスは、組織が運用リスクを迅速に特定し、財務的影響を正確に定量化し、新たな成長機会を特定する方法を根本的に変革します。Snowflake Intelligence が迅速なデータ主導の意思決定を可能にし、かつては断片化していたデータを誰にとっても明確で説得力のあるビジネス上の優位性に変えることは明らかです。
+すべての技術レベルのユーザーが自然言語で質問して、視覚的に豊かで実行可能な回答を即座に受け取れるようになりました。そして重要なのは、**この一連の AI 資産すべてを SQL（DDL）で定義した**という点です。つまり Git で管理し、レビューし、他の環境へ再現配布できます。これがデータエンジニアが AI 基盤を「運用可能な資産」として扱うための土台になります。
 
-## アプリとコラボレーション
+## （オプション）アプリとコラボレーション
 
 ![./assets/appscollab_header.png](./assets/appscollab_header.png)
 
@@ -2081,10 +2269,15 @@ Snowsight で再び結果を可視化しましょう。今度は棒グラフに�
 1.  `ACCOUNTADMIN` ロールを使用していることを確認します。
 2.  **Data Products** » **Marketplace** に移動します。
 3.  検索バーに `safegraph frostbyte` と入力します。
+
+![assets/vignette-5/safegraph_search.png](assets/vignette-5/safegraph_search.png)
+
 4.  **Safegraph: frostbyte** リスティングを選択して **Get** をクリックします。
 5.  Options を展開し、**Database name** を `ZTS_SAFEGRAPH` に設定します。
 6.  **PUBLIC** ロールへのアクセスを付与します。
 7.  **Get** をクリックします。
+
+![assets/vignette-5/safegraph_listing.png](assets/vignette-5/safegraph_listing.png)
 
 #### ステップ 2 - POI ビューの作成
 
