@@ -5,7 +5,7 @@ Copyright(c): 2025 Snowflake Inc. All rights reserved.
 ****************************************************************************************************/
 
 /*--
- • リポジトリ URL（Git ワークスペース作成時にそのままコピー & ペーストしてください）
+ • リポジトリ URL（setup.sql の実行が終了し、Gitワークスペースを作成する際にそのままコピー & ペーストしてください）
 
      https://github.com/sfc-gh-kshimada/ZeroToSnowflake-SWT2026-JA
 
